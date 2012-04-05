@@ -1,0 +1,23 @@
+Here a few items that (may) need to be completed in the future versions:
+
+***** python/ *****
+* Provide a Python binding (I need it for later).
+
+
+***** src/ *****
+
+* Poll the stdout/stderr and store the result in memory (for now, we
+  are relying on the file descriptor's buffer which has a limited size
+  (4kb)).
+
+* Provide a more efficient data-structure to store and access the
+  syscalls.
+
+
+***** test/ *****
+* Set up a test framework that can check each feature and particular
+  settings (trying to avoid regression).
+
+
+***** doc/ *****
+* Write a documentation of the man procedures of the API (manpages with troff).

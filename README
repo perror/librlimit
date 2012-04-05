@@ -1,0 +1,56 @@
+   librlimit: A library to manage resource limitation and profiling
+   ================================================================
+
+librlimit is a library intended to put restrictions over resources
+ (time, memory, system calls, ...) on a set of subprocesses and to
+ provide basic profile information on their execution.
+
+Note that the library is NOT intended to perform full isolation,
+though it should be used to deal with (possibly) resource killing
+programs.
+
+The first intention behind this library was to have a full
+controllable environment (mostly for the timeout part) when running
+some black-box over testing students' programs on my computer. And, as
+you may know, students are remarkably resourceful little critters when
+it comes to make my computer crash.
+
+The need for profile information came afterward when trying to
+determine which program was the most efficient.
+
+
+User Build and Install
+=======================
+The installation can easily be made by the well known:
+./configure && make && su -c 'make install'
+
+In case of error, the './configure' script should provide some useful
+error messages that will help you to get through (read it and try to
+understand it before asking anything, please).
+
+
+Developer Build and Install
+=============================
+To build the library go to source root and generate the ./configure
+script by executing:
+
+./autogen.sh <configure-options>
+
+The 'configure-options' are the usual ones plus a few more that are
+listed below:
+
+ --enable-werror         compile with -Werror flag (default is no)
+ --enable-debug          compile with debug (default is no)
+ --enable-optimize       compile with optimization (default is no)
+
+
+
+Developer Tips and Tricks
+===========================
+
+Editing Changelog
+-----------------
+* With Emacs:
+Use the built-in ChangeLog mode. Here are the main commands:
+  + C-x 4 a : Add an entry to the current changelog (from the file you edited)
+  + C-x 4 a : Add a new entry to the changelog (from the changelog itself)
