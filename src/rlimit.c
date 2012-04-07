@@ -98,7 +98,7 @@ rlimit_warning (char *msg)
 }
 
 subprocess_t *
-rlimit_create (int argc, char **argv, char **envp)
+rlimit_subprocess_create (int argc, char **argv, char **envp)
 {
   subprocess_t *p = malloc (sizeof (subprocess_t));
   /* Handling 'out of memory' */
@@ -221,7 +221,7 @@ limits_delete (limits_t * limits)
 }
 
 void
-rlimit_delete (subprocess_t * p)
+rlimit_subprocess_delete (subprocess_t * p)
 {
   /* Discarding case 'p == NULL' */
   if (!p)
@@ -670,7 +670,7 @@ fprintf_syscall (int syscall)
 }
 
 void
-rlimit_display (subprocess_t * p)
+rlimit_subprocess_display (subprocess_t * p)
 {
   /* 'argv' display */
   fprintf (stdout, "* Command line: ");
@@ -1157,7 +1157,7 @@ fail:
 }
 
 int
-rlimit_run (subprocess_t * p)
+rlimit_subprocess_run (subprocess_t * p)
 {
   pthread_t monitor_pthread;
   int ret = RETURN_SUCCESS;
@@ -1176,7 +1176,7 @@ rlimit_run (subprocess_t * p)
 }
 
 int
-rlimit_kill (subprocess_t * p)
+rlimit_subprocess_kill (subprocess_t * p)
 {
   int ret;
 
@@ -1187,7 +1187,7 @@ rlimit_kill (subprocess_t * p)
 }
 
 int
-rlimit_suspend (subprocess_t * p)
+rlimit_subprocess_suspend (subprocess_t * p)
 {
   int ret;
 
@@ -1198,7 +1198,7 @@ rlimit_suspend (subprocess_t * p)
 }
 
 int
-rlimit_resume (subprocess_t * p)
+rlimit_subprocess_resume (subprocess_t * p)
 {
   int ret;
 
@@ -1209,13 +1209,13 @@ rlimit_resume (subprocess_t * p)
 }
 
 int
-rlimit_poll (subprocess_t * p)
+rlimit_subprocess_poll (subprocess_t * p)
 {
   return p->status;
 }
 
 int
-rlimit_wait (subprocess_t * p)
+rlimit_subprocess_wait (subprocess_t * p)
 {
   struct timespec tick;
 
@@ -1229,7 +1229,7 @@ rlimit_wait (subprocess_t * p)
 }
 
 int
-rlimit_signal (int signal, subprocess_t * p)
+rlimit_subprocess_signal (int signal, subprocess_t * p)
 {
   int ret;
 
@@ -1398,7 +1398,7 @@ rlimit_get_disabled_syscalls (subprocess_t * p)
 
 /***** Profile information *****/
 int
-rlimit_profile_init (subprocess_t * p)
+rlimit_subprocess_profile (subprocess_t * p)
 {
   int ret = RETURN_SUCCESS;
 

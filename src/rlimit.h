@@ -99,27 +99,27 @@ typedef struct subprocess
 /* ********************* */
 
 /* Create/delete a subprocess */
-subprocess_t *rlimit_create (int argc, char **argv, char **envp);
-void rlimit_delete (subprocess_t * p);
+subprocess_t *rlimit_subprocess_create (int argc, char **argv, char **envp);
+void rlimit_subprocess_delete (subprocess_t * p);
 
 /* Display a subprocess for debug */
-void rlimit_display (subprocess_t * p);
+void rlimit_subprocess_display (subprocess_t * p);
 
 /* run, kill, suspend and resume a subprocess.
  * Returns '0' if everything went fine, '-1' otherwise. */
-int rlimit_run (subprocess_t * p);
-int rlimit_kill (subprocess_t * p);
-int rlimit_suspend (subprocess_t * p);
-int rlimit_resume (subprocess_t * p);
+int rlimit_subprocess_run (subprocess_t * p);
+int rlimit_subprocess_kill (subprocess_t * p);
+int rlimit_subprocess_suspend (subprocess_t * p);
+int rlimit_subprocess_resume (subprocess_t * p);
 
 /* Check if the subprocess is terminated ('1' if terminated, '0' otherwise). */
-int rlimit_poll (subprocess_t * p);
+int rlimit_subprocess_poll (subprocess_t * p);
 
 /* Wait for child process to terminate and return p->retval */
-int rlimit_wait (subprocess_t * p);
+int rlimit_subprocess_wait (subprocess_t * p);
 
 /* Send a signal to the subprocess */
-int rlimit_signal (int signal, subprocess_t * p);
+int rlimit_subprocess_signal (int signal, subprocess_t * p);
 
 /* Setting/getting the subprocess limitation (default: 0 (unlimited)) */
 /* ****************************************************************** */
@@ -151,16 +151,16 @@ int *rlimit_get_disabled_syscalls (subprocess_t * p);
 /* Getting subprocess profiling information */
 /* **************************************** */
 /* Initialize the profiler for the subprocess */
-int rlimit_profile_init (subprocess_t * p);
+int rlimit_subprocess_profile (subprocess_t * p);
 
 /* Time spend in total by the process (idle time included) */
-time_t rlimit_get_real_time (subprocess_t * p);
+time_t rlimit_get_real_time_profile (subprocess_t * p);
 /* Time spend in user-land by the subprocess and its childs */
-time_t rlimit_get_user_time (subprocess_t * p);
+time_t rlimit_get_user_time_profile (subprocess_t * p);
 /* Time spend in kernel-land by the subprocess and its childs */
-time_t rlimit_get_sys_time (subprocess_t * p);
+time_t rlimit_get_sys_time_profile (subprocess_t * p);
 
 /* Maximum amount of memory used */
-size_t rlimit_get_memory (subprocess_t * p);
+size_t rlimit_get_memory_profile (subprocess_t * p);
 
 #endif /* RLIMIT_H */
