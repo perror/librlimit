@@ -232,7 +232,7 @@ rlimit_subprocess_delete (subprocess_t * p)
   if (p->status < TERMINATED)
     {
       rlimit_warning ("subprocess was still running");
-      rlimit_kill (p);
+      rlimit_subprocess_kill (p);
     }
 
   /* Freeing argv and envp */
@@ -1066,7 +1066,7 @@ monitor (void *arg)
 		  for (int i = 1; i <= p->limits->syscalls[0]; i++)
 		    if (syscall_id == p->limits->syscalls[i])
 		      {
-			rlimit_kill (p);
+			rlimit_subprocess_kill (p);
 			p->status = DENIEDSYSCALL;
 			goto fail;
 		      }

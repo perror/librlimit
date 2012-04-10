@@ -25,7 +25,7 @@ dnl Option and variable settings
 dnl ********************************************************************
 
 dnl Initial settings of flags variables
-CFLAGS="-Wall -Wextra"
+CFLAGS="-Wall -Wextra -std=c99"
 CPPFLAGS="${CPPFLAGS}"
 LDFLAGS="${LDFLAGS}"
 LIBS="${LIBS}"
@@ -57,7 +57,7 @@ AC_ARG_ENABLE(optimize,
               AS_HELP_STRING([--enable-optimize],
                              [compile with optimization (default is no)]),
               ENABLE_OPTIMIZE=$enableval,
-              ENABLE_OPTIMIZE=no)
+              ENABLE_OPTIMIZE=yes)
 
 if test x$ENABLE_OPTIMIZE = xyes ; then
     CFLAGS="${CFLAGS} -O2"

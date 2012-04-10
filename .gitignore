@@ -26,3 +26,4 @@ missing
 ylwrap
 src/stamp-h1
 src/librlimit.la
+test/01_stdout
