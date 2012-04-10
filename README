@@ -41,7 +41,7 @@ listed below:
 
  --enable-werror         compile with -Werror flag (default is no)
  --enable-debug          compile with debug (default is no)
- --enable-optimize       compile with optimization (default is no)
+ --enable-optimize       compile with optimization (default is yes)
 
 
 
