@@ -72,6 +72,7 @@ AC_CONFIG_FILES([
 	doc/Makefile
         src/Makefile
         test/Makefile
+	test/utils/Makefile
 ], [ ], [ ])
 
 AC_OUTPUT
@@ -96,6 +97,6 @@ Here is the configuration of the package:
 Optional Features:
     Enable debug messages       : ${ENABLE_DEBUG}
     Enable optimization         : ${ENABLE_OPTIMIZE}
-    Enable -Werror              : ${ENABLE_WERROR}
     Maintainer mode             : ${enable_maintainer_mode}
+    Enable -Werror              : ${ENABLE_WERROR}
 ])

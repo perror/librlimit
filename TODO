@@ -1,23 +1,34 @@
 Here a few items that (may) need to be completed in the future versions:
 
 ***** python/ *****
-* Provide a Python binding (I need it for later).
+* [feature] Provide a Python binding (I need it for later).
 
 
 ***** src/ *****
+* [bug] Writing on the input of a subprocess do not seems to work.
 
-* Poll the stdout/stderr and store the result in memory (for now, we
-  are relying on the file descriptor's buffer which has a limited size
-  (4kb)).
+* [bug] Poll the stdout/stderr and store the result in memory (for
+  now, we are relying on the file descriptor's buffer which has a
+  limited size (4kb)).
 
-* Provide a more efficient data-structure to store and access the
-  syscalls.
+* [feature] Provide a more efficient data-structure to store and
+  access the syscalls.
 
 
 ***** test/ *****
-* Set up a test framework that can check each feature and particular
-  settings (trying to avoid regression).
+* [feature] Set up a test framework that can check each feature and
+  particular settings (trying to avoid regression).
 
 
 ***** doc/ *****
-* Write a documentation of the man procedures of the API (manpages with troff).
+* [feature] Write a documentation of the main procedures of the API
+  (manpages with troff).
+
+
+Future milestones
+******************
+version 1.0: API stabilization and bug fixing
+version 0.9: documentation
+version 0.8: Python binding
+version 0.7: Poll stdout/stderr and store result in an expandable memory
+version 0.6: Test framework

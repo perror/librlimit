@@ -62,8 +62,8 @@
 #define CHECK_WARNING(test, msg)\
   if (test) { rlimit_warning (msg); goto fail; }
 
-static char *error = "libsubprocess: error";
-static char *warning = "libsubprocess: warning";
+static char *error = "librlimit: error";
+static char *warning = "librlimit: warning";
 
 static void
 rlimit_error (char *msg)

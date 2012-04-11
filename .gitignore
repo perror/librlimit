@@ -26,4 +26,9 @@ missing
 ylwrap
 src/stamp-h1
 src/librlimit.la
-test/01_stdout
+test/01_io
+test/02_timeout
+test/03_notimeout
+test/04_forbid_syscall
+test/utils/test_fork
+test/utils/test_io
