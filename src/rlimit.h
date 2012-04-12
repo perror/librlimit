@@ -28,7 +28,7 @@
 
 /*
  * Changelog:
- *  03/26/2012 (Emmanuel Fleury): First public release
+ *  * 03/26/2012 (Emmanuel Fleury): First public release
  */
 
 #ifndef RLIMIT_H
@@ -102,8 +102,10 @@ typedef struct subprocess
 subprocess_t *rlimit_subprocess_create (int argc, char **argv, char **envp);
 void rlimit_subprocess_delete (subprocess_t * p);
 
+#ifdef DEBUG
 /* Display a subprocess for debug */
-void rlimit_subprocess_display (subprocess_t * p);
+void rlimit_subprocess_print (subprocess_t * p);
+#endif
 
 /* run, kill, suspend and resume a subprocess.
  * Returns '0' if everything went fine, '-1' otherwise. */
