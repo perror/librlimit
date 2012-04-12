@@ -31,4 +31,4 @@ version 1.0: API stabilization and bug fixing
 version 0.9: documentation
 version 0.8: Python binding
 version 0.7: Poll stdout/stderr and store result in an expandable memory
-version 0.6: Test framework
+	     Fix the write on the stdin

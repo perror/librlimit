@@ -1,3 +1,10 @@
+2012-04-12  Emmanuel Fleury  <emmanuel.fleury@labri.fr>
+
+	* Release: version 0.6
+	* Feature: Added test framework
+	* Fixed various mistake of various importance
+	  (from cosmetic up to critical bugs, report to the diffs for more)
+
 2012-04-06  Emmanuel Fleury  <emmanuel.fleury@labri.fr>
 
 	* Released first public version.
