@@ -98,7 +98,7 @@ rlimit_warning (char *msg)
 }
 
 #ifdef DEBUG
-#include "rlimit-debug.c"
+#include "rlimit-debug.i"
 #endif
 
 subprocess_t *
