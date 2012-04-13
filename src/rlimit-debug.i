@@ -193,8 +193,6 @@ fprintf_syscall (int syscall)
       CASE (SYS_pread64, "pread64");
       CASE (SYS_preadv, "preadv");
       CASE (SYS_prlimit64, "prlimit64");
-      CASE (SYS_process_vm_readv, "process_vm_readv");
-      CASE (SYS_process_vm_writev, "process_vm_writev");
       CASE (SYS_pselect6, "pselect6");
       CASE (SYS_ptrace, "ptrace");
       CASE (SYS_putpmsg, "putpmsg");
