@@ -5,8 +5,6 @@ Here a few items that (may) need to be completed in the future versions:
 
 
 ***** src/ *****
-* [bug] Writing on the input of a subprocess do not seems to work.
-
 * [bug] Poll the stdout/stderr and store the result in memory (for
   now, we are relying on the file descriptor's buffer which has a
   limited size (4kb)).
