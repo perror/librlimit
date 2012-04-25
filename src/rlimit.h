@@ -35,9 +35,11 @@
 #define RLIMIT_H
 
 #include <stdio.h>
-#include <sys/types.h>
 #include <unistd.h>
 
+#include <pthread.h>
+
+#include <sys/types.h>
 #include <sys/syscall.h>
 
 /* Subprocess status */
@@ -85,12 +87,20 @@ typedef struct subprocess
   int argc;			/* Arguments' number */
   char **argv;			/* Command line */
   char **envp;			/* Environment variables */
+
   pid_t pid;			/* Subprocess ID */
   int status;			/* Subprocess status */
   int retval;			/* Subprocess return value */
+
   FILE *stdin;			/* Subprocess stdin handler */
   FILE *stdout;			/* Subprocess stdout handler */
   FILE *stderr;			/* Subprocess stderr handler */
+
+  char *stdout_buffer;          /* Buffer storing stdout output */
+  char *stderr_buffer;          /* Buffer storing stderr output */
+
+  pthread_t *monitor;
+
   limits_t *limits;		/* Limits on the subprocess */
   profile_t *profile;		/* Profiling the subprocess */
 } subprocess_t;
@@ -105,7 +115,7 @@ void rlimit_subprocess_delete (subprocess_t * p);
 #ifdef DEBUG
 /* Display a subprocess for debug */
 void rlimit_subprocess_print (subprocess_t * p);
-#endif
+#endif /* DEBUG */
 
 /* run, kill, suspend and resume a subprocess.
  * Returns '0' if everything went fine, '-1' otherwise. */
@@ -113,6 +123,11 @@ int rlimit_subprocess_run (subprocess_t * p);
 int rlimit_subprocess_kill (subprocess_t * p);
 int rlimit_subprocess_suspend (subprocess_t * p);
 int rlimit_subprocess_resume (subprocess_t * p);
+
+/* Handling input/output to a subprocess */
+ssize_t rlimit_write_stdin (char * msg, subprocess_t * p);
+char *rlimit_read_stdout (subprocess_t * p);            // TODO
+char *rlimit_read_stderr (subprocess_t * p);            // TODO
 
 /* Check if the subprocess is terminated ('1' if terminated, '0' otherwise). */
 int rlimit_subprocess_poll (subprocess_t * p);

@@ -14,7 +14,6 @@ main ()
 
   subprocess_t *p = rlimit_subprocess_create (myargc, myargv, NULL);
 
-  rlimit_set_time_limit (3, p);
   rlimit_subprocess_run (p);
 
   /* Waiting for the subprocess to start */
@@ -22,8 +21,7 @@ main ()
 
   /* Writing to the stdin */
   assert (p->stdin);
-  assert(fputs ("42\n", p->stdin) != EOF);
-  fflush (p->stdin);
+  assert (rlimit_write_stdin ("42\n", p) == 3);
 
   rlimit_subprocess_wait (p);
 

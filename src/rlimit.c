@@ -182,6 +182,11 @@ rlimit_subprocess_create (int argc, char **argv, char **envp)
   p->stdout = NULL;
   p->stderr = NULL;
 
+  p->stdout_buffer = NULL;
+  p->stderr_buffer = NULL;
+
+  p->monitor = malloc (sizeof (pthread_t));
+
   /* Initializing the limits and profile to default */
   p->limits = NULL;
   p->profile = NULL;
@@ -257,22 +262,23 @@ rlimit_subprocess_delete (subprocess_t * p)
     }
 
   /* Closing the file descriptors */
-  if (p->stdin)
-    fclose (p->stdin);
+  fclose (p->stdin);
+  fclose (p->stdout);
+  fclose (p->stderr);
 
-  if (p->stdout)
-    fclose (p->stdout);
+  /* Freeing buffers */
+  free (p->stdout_buffer);
+  free (p->stderr_buffer);
 
-  if (p->stderr)
-    fclose (p->stderr);
+  /* Freeing the monitor */
+  free (p->monitor);
 
   /* Freeing the limits_t */
   if (p->limits)
     limits_delete (p->limits);
 
   /* Freeing the profile */
-  if (p->profile)
-    free (p->profile);
+  free (p->profile);
 
   /* Freeing the subprocess */
   free (p);
@@ -326,8 +332,7 @@ watchdog (void *arg)
 	    }
 	  else if (errno == EAGAIN)
 	    {
-	      p->status = TIMEOUT;
-	      kill (p->pid, SIGKILL);
+	      kill (p->pid, SIGALRM);
 	    }
 	  else
 	    {
@@ -355,9 +360,6 @@ monitor (void *arg)
 
   /* Profiling information */
   struct rusage usage;
-
-  CHECK_ERROR ((pthread_detach (pthread_self ()) != 0),
-	       "pthread_detach failed");
 
   /* Initializing the pipes () */
   int stdin_pipe[2];		/* '0' = child_read,  '1' = parent_write */
@@ -570,14 +572,14 @@ monitor (void *arg)
 	  if (p->status < TERMINATED)
 	    {
 	      /* Trying to guess why by looking at errno value */
-	      switch (errno)
+	      switch (WTERMSIG (status))
 		{
-		case ETIME:
-		  p->status = TIMEOUT;
+		case SIGSEGV:
+		  p->status = MEMORYOUT;
 		  break;
 
-		case ENOMEM:
-		  p->status = MEMORYOUT;
+		case SIGALRM:
+		  p->status = TIMEOUT;
 		  break;
 
 		default:
@@ -625,11 +627,10 @@ fail:
 int
 rlimit_subprocess_run (subprocess_t * p)
 {
-  pthread_t monitor_pthread;
   int ret = RETURN_SUCCESS;
 
-  /* Running a thread to wait for subprocess return value */
-  CHECK_ERROR ((pthread_create (&monitor_pthread, NULL, monitor, p) != 0),
+  /* Running a monitor thread to wait for subprocess return value */
+  CHECK_ERROR ((pthread_create (p->monitor, NULL, monitor, p) != 0),
 	       "monitor creation failed");
 
   if (false)
@@ -674,6 +675,17 @@ rlimit_subprocess_resume (subprocess_t * p)
   return ret;
 }
 
+ssize_t
+rlimit_write_stdin (char * msg, subprocess_t * p)
+{
+  ssize_t ret;
+
+  ret = write (fileno (p->stdin), msg, strlen (msg));
+  fflush (p->stdin);
+
+  return ret;
+}
+
 int
 rlimit_subprocess_poll (subprocess_t * p)
 {
@@ -683,13 +695,8 @@ rlimit_subprocess_poll (subprocess_t * p)
 int
 rlimit_subprocess_wait (subprocess_t * p)
 {
-  struct timespec tick;
-
-  tick.tv_sec = 0;
-  tick.tv_nsec = 100;
-
-  while (p->status < TERMINATED)
-    nanosleep (&tick, NULL);
+  if (pthread_join(*(p->monitor), NULL) != 0)
+    perror ("pthread_join to monitor failed");
 
   return p->retval;
 }
