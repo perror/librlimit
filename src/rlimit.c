@@ -349,10 +349,12 @@ fail:
 }
 
 /* Monitor for the child process */
-static void
-child_monitor (int stdin_pipe[2], int stdout_pipe[2],
-	       int stderr_pipe[2], subprocess_t * p)
+static int
+child_monitor (int stdin_pipe[2], int stdout_pipe[2], int stderr_pipe[2],
+	       subprocess_t * p)
 {
+  int ret = RETURN_SUCCESS;
+
   /* Set the limits on the process */
   if (p->limits != NULL)
     {
@@ -439,7 +441,9 @@ child_monitor (int stdin_pipe[2], int stdout_pipe[2],
 
   if (false)
   fail:
-    rlimit_error ("child monitor failed");
+    ret = RETURN_FAILURE;
+
+  return ret;
 }
 
 /* Monitoring the subprocess end and get the return value */
@@ -488,7 +492,9 @@ monitor (void *arg)
 
   if (p->pid == 0)	/***** Child process *****/
     {
-      child_monitor (stdin_pipe, stdout_pipe, stderr_pipe, p);
+      CHECK_ERROR ((child_monitor (stdin_pipe, stdout_pipe,
+				   stderr_pipe, p) == RETURN_FAILURE),
+		   "child monitor failed");
     }
   else					    /***** Parent process *****/
     {
@@ -525,16 +531,16 @@ monitor (void *arg)
 	    {
 	      struct user_regs_struct regs;
 
-	      CHECK_ERROR ((ptrace (PTRACE_SYSCALL, p->pid, NULL, NULL) ==
-			    -1), "ptrace failed");
+	      CHECK_ERROR ((ptrace (PTRACE_SYSCALL, p->pid, NULL, NULL) == -1),
+			   "ptrace failed");
 	      CHECK_ERROR ((wait4 (p->pid, &status, 0, &usage) == -1),
 			   "wait failed");
 
 	      if (WIFEXITED (status))
 		break;
 
-	      CHECK_ERROR ((ptrace (PTRACE_GETREGS, p->pid, NULL, &regs) ==
-			    -1), "ptrace failed");
+	      CHECK_ERROR ((ptrace (PTRACE_GETREGS, p->pid, NULL, &regs) == -1),
+			   "ptrace failed");
 
 	      /* Getting syscall number is architecture dependant */
 #if __WORDSIZE == 64
@@ -548,8 +554,8 @@ monitor (void *arg)
 		  for (int i = 1; i <= p->limits->syscalls[0]; i++)
 		    if (syscall_id == p->limits->syscalls[i])
 		      {
-			rlimit_subprocess_kill (p);
 			p->status = DENIEDSYSCALL;
+			rlimit_subprocess_kill (p);
 			goto fail;
 		      }
 		}
