@@ -446,17 +446,64 @@ child_monitor (int stdin_pipe[2], int stdout_pipe[2], int stderr_pipe[2],
   return ret;
 }
 
+static int
+syscall_filter (int * status, struct rusage * usage, subprocess_t * p)
+{
+  int syscall_id;
+  bool syscall_enter = true;
+  int ret = RETURN_SUCCESS;
+
+  while (true)
+    {
+      struct user_regs_struct regs;
+
+      CHECK_ERROR ((ptrace (PTRACE_SYSCALL, p->pid, NULL, NULL) == -1),
+		   "ptrace failed");
+      CHECK_ERROR ((wait4 (p->pid, status, 0, usage) == -1),
+		   "wait failed");
+
+      if (WIFEXITED (*status))
+	break;
+
+      CHECK_ERROR ((ptrace (PTRACE_GETREGS, p->pid, NULL, &regs) == -1),
+		   "ptrace failed");
+
+      /* Getting syscall number is architecture dependant */
+#if __WORDSIZE == 64
+      syscall_id = regs.orig_rax;
+#elif __WORSIZE == 32
+      syscall_id = regs.orig_eax;
+#endif
+
+      if (syscall_enter)
+	{
+	  for (int i = 1; i <= p->limits->syscalls[0]; i++)
+	    if (syscall_id == p->limits->syscalls[i])
+	      {
+		p->status = DENIEDSYSCALL;
+		rlimit_subprocess_kill (p);
+		goto fail;
+	      }
+	}
+
+      syscall_enter ^= true;
+    }
+
+  if (false)
+  fail:
+    ret = RETURN_FAILURE;
+
+  return ret;
+}
+
 /* Monitoring the subprocess end and get the return value */
 static void *
 monitor (void *arg)
 {
   subprocess_t *p = arg;
-  int status;
   pthread_t watchdog_pthread;
-  struct timespec start_time;
-
-  /* Profiling information */
   struct rusage usage;
+  struct timespec start_time;
 
   /* Initializing the pipes () */
   int stdin_pipe[2];		/* '0' = child_read,  '1' = parent_write */
@@ -498,6 +545,8 @@ monitor (void *arg)
     }
   else					    /***** Parent process *****/
     {
+      int status;
+
       CHECK_ERROR ((close (stdin_pipe[0]) == -1), "close(stdin[0]) failed");
       CHECK_ERROR (((p->stdin = fdopen (stdin_pipe[1], "w")) == NULL),
 		   "fdopen(stdin[1]) failed");
@@ -524,44 +573,8 @@ monitor (void *arg)
       /* Filtering syscalls with ptrace */
       if ((p->limits != NULL) && (p->limits->syscalls[0] > 0))
 	{
-	  int syscall_id;
-	  bool syscall_enter = true;
-
-	  while (true)
-	    {
-	      struct user_regs_struct regs;
-
-	      CHECK_ERROR ((ptrace (PTRACE_SYSCALL, p->pid, NULL, NULL) == -1),
-			   "ptrace failed");
-	      CHECK_ERROR ((wait4 (p->pid, &status, 0, &usage) == -1),
-			   "wait failed");
-
-	      if (WIFEXITED (status))
-		break;
-
-	      CHECK_ERROR ((ptrace (PTRACE_GETREGS, p->pid, NULL, &regs) == -1),
-			   "ptrace failed");
-
-	      /* Getting syscall number is architecture dependant */
-#if __WORDSIZE == 64
-	      syscall_id = regs.orig_rax;
-#elif __WORSIZE == 32
-	      syscall_id = regs.orig_eax;
-#endif
-
-	      if (syscall_enter)
-		{
-		  for (int i = 1; i <= p->limits->syscalls[0]; i++)
-		    if (syscall_id == p->limits->syscalls[i])
-		      {
-			p->status = DENIEDSYSCALL;
-			rlimit_subprocess_kill (p);
-			goto fail;
-		      }
-		}
-
-	      syscall_enter ^= true;
-	    }
+	  if (syscall_filter (&status, &usage, p) == RETURN_FAILURE)
+	    goto fail;
 	}
 
       /***** The subprocess is finished now *****/
