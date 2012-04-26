@@ -501,8 +501,6 @@ static void *
 monitor (void *arg)
 {
   subprocess_t *p = arg;
-  pthread_t watchdog_pthread;
-  struct rusage usage;
   struct timespec start_time;
 
   /* Initializing the pipes () */
@@ -539,13 +537,16 @@ monitor (void *arg)
 
   if (p->pid == 0)	/***** Child process *****/
     {
-      CHECK_ERROR ((child_monitor (stdin_pipe, stdout_pipe,
+      CHECK_ERROR ((child_monitor (stdin_pipe,
+				   stdout_pipe,
 				   stderr_pipe, p) == RETURN_FAILURE),
 		   "child monitor failed");
     }
-  else					    /***** Parent process *****/
+  else			/***** Parent process *****/
     {
       int status;
+      pthread_t watchdog_pthread;
+      struct rusage usage;
 
       CHECK_ERROR ((close (stdin_pipe[0]) == -1), "close(stdin[0]) failed");
       CHECK_ERROR (((p->stdin = fdopen (stdin_pipe[1], "w")) == NULL),
@@ -611,10 +612,6 @@ monitor (void *arg)
 		  p->status = MEMORYOUT;
 		  break;
 
-		case SIGALRM:
-		  p->status = TIMEOUT;
-		  break;
-
 		default:
 		  p->status = KILLED;
 		}
@@ -632,26 +629,26 @@ monitor (void *arg)
 	  p->status = RUNNING;
 	  p->retval = 0;	/* Process is still running */
 	}
-    }
 
-fail:
-  /* Cleaning the watchdog if not already exited */
-  if ((p->limits) && (p->limits->timeout > 0))
-    pthread_cancel (watchdog_pthread);
+    fail:
+      /* Cleaning the watchdog if not already exited */
+      if ((p->limits) && (p->limits->timeout > 0))
+	pthread_cancel (watchdog_pthread);
 
-  /* Cleaning and setting the profile information */
-  if (p->profile != NULL)
-    {
-      /* User time in us */
-      p->profile->user_time_usec =
-	usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec;
+      /* Cleaning and setting the profile information */
+      if (p->profile != NULL)
+	{
+	  /* User time in us */
+	  p->profile->user_time_usec =
+	    usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec;
 
-      /* System time in us */
-      p->profile->sys_time_usec =
-	usage.ru_stime.tv_sec * 1000 + usage.ru_stime.tv_usec;
+	  /* System time in us */
+	  p->profile->sys_time_usec =
+	    usage.ru_stime.tv_sec * 1000 + usage.ru_stime.tv_usec;
 
-      /* Memory usage */
-      p->profile->memory_kbytes = usage.ru_maxrss;
+	  /* Memory usage */
+	  p->profile->memory_kbytes = usage.ru_maxrss;
+	}
     }
 
   return NULL;
