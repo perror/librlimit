@@ -6,7 +6,8 @@ TESTS='01_io
        04_forbid_syscall
        05_profile_sleep
        06_profile_stack_alloc
-       07_profile_malloc'
+       07_profile_malloc
+       08_forbid_syscall_timeouted'
 
 failed=0
 success=0
