@@ -332,7 +332,8 @@ watchdog (void *arg)
 	    }
 	  else if (errno == EAGAIN)
 	    {
-	      kill (p->pid, SIGALRM);
+	      p->status = TIMEOUT;
+	      kill (p->pid, SIGKILL);
 	    }
 	  else
 	    {
@@ -347,14 +348,106 @@ fail:
   return NULL;
 }
 
+/* Monitor for the child process */
+static void
+child_monitor (int stdin_pipe[2], int stdout_pipe[2],
+	       int stderr_pipe[2], subprocess_t * p)
+{
+  /* Set the limits on the process */
+  if (p->limits != NULL)
+    {
+      /* Setting the rlimits */
+      struct rlimit limit;
+
+      /* Setting a limit on the memory */
+      if (p->limits->memory > 0)
+	{
+	  CHECK_ERROR ((getrlimit (RLIMIT_AS, &limit) == -1),
+		       "getting memory limit failed");
+
+	  limit.rlim_cur = p->limits->memory;
+
+	  CHECK_ERROR ((setrlimit (RLIMIT_AS, &limit) == -1),
+		       "setting memory limit failed");
+	}
+
+      /* Setting a limit on file size */
+      if (p->limits->fsize > 0)
+	{
+	  CHECK_ERROR ((getrlimit (RLIMIT_FSIZE, &limit) == -1),
+		       "getting file size limit failed");
+
+	  limit.rlim_cur = p->limits->fsize;
+
+	  CHECK_ERROR ((setrlimit (RLIMIT_FSIZE, &limit) == -1),
+		       "setting file size limit failed");
+	}
+
+      /* Setting a limit on file descriptor number */
+      if (p->limits->fd > 0)
+	{
+	  CHECK_ERROR ((getrlimit (RLIMIT_NOFILE, &limit) == -1),
+		       "getting maximum fd number limit failed");
+
+	  limit.rlim_cur = p->limits->fd;
+
+	  CHECK_ERROR ((setrlimit (RLIMIT_NOFILE, &limit) == -1),
+		       "setting maximum fd number limit failed");
+	}
+
+      /* Setting a limit on process number */
+      if (p->limits->proc > 0)
+	{
+	  CHECK_ERROR ((getrlimit (RLIMIT_NPROC, &limit) == -1),
+		       "getting maximum process number limit failed");
+
+	  limit.rlim_cur = p->limits->proc;
+
+	  CHECK_ERROR ((setrlimit (RLIMIT_NPROC, &limit) == -1),
+		       "setting maximum process number limit failed");
+	}
+
+      /* Setting a syscall tracer on the process */
+      if (p->limits->syscalls[0] > 0)
+	{
+	  CHECK_ERROR ((ptrace (PTRACE_TRACEME, 0, NULL, NULL) == -1),
+		       "ptrace failed");
+	}
+    }
+
+  /* Setting i/o handlers */
+  CHECK_ERROR ((close (stdin_pipe[1]) == -1), "close(stdin[1]) failed");
+  CHECK_ERROR ((dup2 (stdin_pipe[0], STDIN_FILENO) == -1),
+	       "dup(stdin) failed");
+  CHECK_ERROR ((close (stdin_pipe[0]) == -1), "close(stdin[0]) failed");
+
+  CHECK_ERROR ((close (stdout_pipe[0]) == -1), "close(stdout[0]) failed");
+  CHECK_ERROR ((dup2 (stdout_pipe[1], STDOUT_FILENO) == -1),
+	       "dup(stdout) failed");
+  CHECK_ERROR ((close (stdout_pipe[1]) == -1), "close(stdout[1]) failed");
+
+  CHECK_ERROR ((close (stderr_pipe[0]) == -1), "close(stderr[0]) failed");
+  CHECK_ERROR ((dup2 (stderr_pipe[1], STDERR_FILENO) == -1),
+	       "dup(stderr) failed");
+  CHECK_ERROR ((close (stderr_pipe[1]) == -1), "close(stderr[1]) failed");
+
+  /* Run the command line */
+  execve (p->argv[0], p->argv, p->envp);
+
+  /* Must never return after the execve */
+  CHECK_ERROR (true, "execve failed");
+
+  if (false)
+  fail:
+    rlimit_error ("child monitor failed");
+}
+
 /* Monitoring the subprocess end and get the return value */
 static void *
 monitor (void *arg)
 {
   subprocess_t *p = arg;
-
-  bool syscall_enter = true;
-  int status, syscall_id;
+  int status;
   pthread_t watchdog_pthread;
   struct timespec start_time;
 
@@ -395,89 +488,7 @@ monitor (void *arg)
 
   if (p->pid == 0)	/***** Child process *****/
     {
-      /* Set the limits on the process */
-      if (p->limits != NULL)
-	{
-	  /* Setting the rlimits */
-	  struct rlimit limit;
-
-	  /* Setting a limit on the memory */
-	  if (p->limits->memory > 0)
-	    {
-	      CHECK_ERROR ((getrlimit (RLIMIT_AS, &limit) == -1),
-			   "getting memory limit failed");
-
-	      limit.rlim_cur = p->limits->memory;
-
-	      CHECK_ERROR ((setrlimit (RLIMIT_AS, &limit) == -1),
-			   "setting memory limit failed");
-	    }
-
-	  /* Setting a limit on file size */
-	  if (p->limits->fsize > 0)
-	    {
-	      CHECK_ERROR ((getrlimit (RLIMIT_FSIZE, &limit) == -1),
-			   "getting file size limit failed");
-
-	      limit.rlim_cur = p->limits->fsize;
-
-	      CHECK_ERROR ((setrlimit (RLIMIT_FSIZE, &limit) == -1),
-			   "setting file size limit failed");
-	    }
-
-	  /* Setting a limit on file descriptor number */
-	  if (p->limits->fd > 0)
-	    {
-	      CHECK_ERROR ((getrlimit (RLIMIT_NOFILE, &limit) == -1),
-			   "getting maximum fd number limit failed");
-
-	      limit.rlim_cur = p->limits->fd;
-
-	      CHECK_ERROR ((setrlimit (RLIMIT_NOFILE, &limit) == -1),
-			   "setting maximum fd number limit failed");
-	    }
-
-	  /* Setting a limit on process number */
-	  if (p->limits->proc > 0)
-	    {
-	      CHECK_ERROR ((getrlimit (RLIMIT_NPROC, &limit) == -1),
-			   "getting maximum process number limit failed");
-
-	      limit.rlim_cur = p->limits->proc;
-
-	      CHECK_ERROR ((setrlimit (RLIMIT_NPROC, &limit) == -1),
-			   "setting maximum process number limit failed");
-	    }
-
-	  /* Setting a syscall tracer on the process */
-	  if (p->limits->syscalls[0] > 0)
-	    {
-	      CHECK_ERROR ((ptrace (PTRACE_TRACEME, 0, NULL, NULL) == -1),
-			   "ptrace failed");
-	    }
-	}
-
-      /* Setting i/o handlers */
-      CHECK_ERROR ((close (stdin_pipe[1]) == -1), "close(stdin[1]) failed");
-      CHECK_ERROR ((dup2 (stdin_pipe[0], STDIN_FILENO) == -1),
-		   "dup(stdin) failed");
-      CHECK_ERROR ((close (stdin_pipe[0]) == -1), "close(stdin[0]) failed");
-
-      CHECK_ERROR ((close (stdout_pipe[0]) == -1), "close(stdout[0]) failed");
-      CHECK_ERROR ((dup2 (stdout_pipe[1], STDOUT_FILENO) == -1),
-		   "dup(stdout) failed");
-      CHECK_ERROR ((close (stdout_pipe[1]) == -1), "close(stdout[1]) failed");
-
-      CHECK_ERROR ((close (stderr_pipe[0]) == -1), "close(stderr[0]) failed");
-      CHECK_ERROR ((dup2 (stderr_pipe[1], STDERR_FILENO) == -1),
-		   "dup(stderr) failed");
-      CHECK_ERROR ((close (stderr_pipe[1]) == -1), "close(stderr[1]) failed");
-
-      /* Run the command line */
-      execve (p->argv[0], p->argv, p->envp);
-
-      /* Must never return after the execve */
-      CHECK_ERROR (true, "execve failed");
+      child_monitor (stdin_pipe, stdout_pipe, stderr_pipe, p);
     }
   else					    /***** Parent process *****/
     {
@@ -507,6 +518,9 @@ monitor (void *arg)
       /* Filtering syscalls with ptrace */
       if ((p->limits != NULL) && (p->limits->syscalls[0] > 0))
 	{
+	  int syscall_id;
+	  bool syscall_enter = true;
+
 	  while (true)
 	    {
 	      struct user_regs_struct regs;
@@ -634,10 +648,8 @@ rlimit_subprocess_run (subprocess_t * p)
 	       "monitor creation failed");
 
   if (false)
-    {
-    fail:
-      ret = RETURN_FAILURE;
-    }
+  fail:
+    ret = RETURN_FAILURE;
 
   return ret;
 }
@@ -890,10 +902,8 @@ rlimit_subprocess_profile (subprocess_t * p)
   p->profile->memory_kbytes = 0;
 
   if (false)
-    {
-    fail:
-      ret = RETURN_FAILURE;
-    }
+  fail:
+    ret = RETURN_FAILURE;
 
   return ret;
 }

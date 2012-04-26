@@ -16,7 +16,7 @@ main ()
   rlimit_subprocess_run (p);
   rlimit_subprocess_wait (p);
 
-  assert (p->retval == SIGALRM);
+  assert (p->retval == SIGKILL);
   assert (p->status == TIMEOUT);
 
   rlimit_subprocess_delete (p);
