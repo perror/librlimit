@@ -15,7 +15,7 @@ main ()
   fflush (stderr);
 
   /* Test on stdin input */
-  fgets (str, 3, stdin);
+  int ret = fgets (str, 3, stdin);
   fprintf (stdout, "%s\n", str);
   fflush (stdout);
 
