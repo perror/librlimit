@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <signal.h>
 #include <stdlib.h>
 
 #include <rlimit.h>
@@ -18,7 +19,7 @@ main ()
   rlimit_subprocess_run (p);
   rlimit_subprocess_wait (p);
 
-  assert (p->retval == EXIT_SUCCESS);
+  assert (p->retval == SIGKILL);
   assert (p->status == TIMEOUT);
 
   rlimit_subprocess_delete (p);

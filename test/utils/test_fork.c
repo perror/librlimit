@@ -7,6 +7,7 @@
 int
 main ()
 {
+  sleep(2);
   switch (fork ())
     {
     case -1:

@@ -33,6 +33,7 @@ test/04_forbid_syscall
 test/05_profile_sleep
 test/06_profile_stack_alloc
 test/07_profile_malloc
+test/08_forbid_syscall_timeouted
 test/utils/test_fork
 test/utils/test_io
 test/utils/test_malloc

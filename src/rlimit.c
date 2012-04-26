@@ -461,7 +461,7 @@ syscall_filter (int * status, struct rusage * usage, subprocess_t * p)
       CHECK_ERROR ((wait4 (p->pid, status, 0, usage) == -1),
 		   "wait failed");
 
-      if (WIFEXITED (*status))
+      if (WIFEXITED (*status) || WIFSIGNALED (*status) || WCOREDUMP (*status))
 	break;
 
       CHECK_ERROR ((ptrace (PTRACE_GETREGS, p->pid, NULL, &regs) == -1),
