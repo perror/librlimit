@@ -321,7 +321,7 @@ watchdog (void *arg)
   timeout.tv_sec = p->limits->timeout;
   timeout.tv_nsec = 0;
 
-  do
+  while (true)
     {
       if (sigtimedwait (&mask, NULL, &timeout) == -1)
 	{
@@ -342,7 +342,6 @@ watchdog (void *arg)
 	}
       break;
     }
-  while (true);
 
 fail:
   return NULL;
