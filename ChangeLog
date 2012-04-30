@@ -1,6 +1,12 @@
+2012-04-30  Emmanuel Fleury  <emmanuel.fleury@labri.fr>
+
+	* Release version 0.7
+	* Fixed a lot of race conditions (still they are more to come)
+	* Added a polling mechanism on stdout/stderr to copy it in heap-memory
+
 2012-04-12  Emmanuel Fleury  <emmanuel.fleury@labri.fr>
 
-	* Release: version 0.6
+	* Release version 0.6
 	* Feature: Added test framework
 	* Fixed various mistake of various importance
 	  (from cosmetic up to critical bugs, report to the diffs for more)
