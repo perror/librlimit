@@ -126,8 +126,8 @@ int rlimit_subprocess_resume (subprocess_t * p);
 
 /* Handling input/output to a subprocess */
 ssize_t rlimit_write_stdin (char * msg, subprocess_t * p);
-char *rlimit_read_stdout (subprocess_t * p);            // TODO
-char *rlimit_read_stderr (subprocess_t * p);            // TODO
+char *rlimit_read_stdout (subprocess_t * p);
+char *rlimit_read_stderr (subprocess_t * p);
 
 /* Check if the subprocess is terminated ('1' if terminated, '0' otherwise). */
 int rlimit_subprocess_poll (subprocess_t * p);

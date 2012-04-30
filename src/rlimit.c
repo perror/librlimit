@@ -31,7 +31,7 @@
  *  * 03/26/2012 (Emmanuel Fleury): First public release
  */
 
-#define _BSD_SOURCE		/* needed by wait4 function */
+#define _BSD_SOURCE		/* needed by wait4() */
 #define _POSIX_C_SOURCE 200809L
 
 #include <errno.h>
@@ -304,6 +304,99 @@ timespec_diff (struct timespec start, struct timespec end)
   return result;
 }
 
+/* IO monitor to watch the stdout and stderr file descriptors */
+static void *
+io_monitor (void *arg)
+{
+  subprocess_t *p = (subprocess_t *) arg;
+
+  int nfds;
+  fd_set rfds, wfds;
+
+  int stdout_fd = fileno (p->stdout);
+  int stderr_fd = fileno (p->stderr);
+  int stdin_fd = fileno (p->stdin);
+
+  int stdout_size = 0;
+  int stdout_current = 0;
+  int stderr_size = 0;
+  int stderr_current = 0;
+
+  while (true)
+    {
+      FD_ZERO (&rfds);
+      FD_SET (stdout_fd, &rfds);
+      FD_SET (stderr_fd, &rfds);
+
+      FD_ZERO(&wfds);
+      FD_SET (stdin_fd, &wfds);
+
+      nfds = (stdout_fd > stderr_fd) ? stdout_fd : stderr_fd;
+      nfds = (stdin_fd > nfds) ? stdin_fd : nfds;
+      nfds += 1;
+
+      int retval = select (nfds, &rfds, &wfds, NULL, NULL);
+
+      if (retval == -1)
+	{
+	  rlimit_error("select failed");
+	  goto fail;
+	}
+
+      ssize_t count;
+      char buffer[256];
+
+      if (FD_ISSET(stdout_fd, &rfds))
+	{
+	  while ((count = read (stdout_fd, buffer, 256)) != 0)
+	    {
+	      if (count == -1)
+		{
+		  rlimit_error ("read() failed");
+		  goto fail;
+		}
+
+	      if ((stdout_current + count + 1) > stdout_size)
+		{
+		  stdout_size += 1024;
+		  p->stdout_buffer =
+		    realloc (p->stdout_buffer, stdout_size);
+		}
+
+	      strncat (&(p->stdout_buffer[stdout_current]), buffer, count);
+	      stdout_current += count;
+	      p->stdout_buffer[stdout_current + 1] = '\0';
+	    }
+	}
+
+      if (FD_ISSET(stderr_fd, &rfds))
+	{
+	  while ((count = read (stderr_fd, buffer, 256)) != 0)
+	    {
+	      if (count == -1)
+		{
+		  rlimit_error ("read() failed");
+		  goto fail;
+		}
+
+	      if ((stderr_current + count + 1) > stderr_size)
+		{
+		  stderr_size += 1024;
+		  p->stderr_buffer =
+		    realloc (p->stderr_buffer, stderr_size);
+		}
+
+	      strncat (&(p->stderr_buffer[stderr_current]), buffer, count);
+	      stderr_current += count;
+	      p->stderr_buffer[stderr_current + 1] = '\0';
+	    }
+	}
+    }
+
+fail:
+  return NULL;
+}
+
 /* Watchdog to timeout the subprocess when needed */
 static void *
 watchdog (void *arg)
@@ -544,7 +637,7 @@ monitor (void *arg)
   else			/***** Parent process *****/
     {
       int status;
-      pthread_t watchdog_pthread;
+      pthread_t watchdog_pthread, io_pthread;
       struct rusage usage;
 
       CHECK_ERROR ((close (stdin_pipe[0]) == -1), "close(stdin[0]) failed");
@@ -561,8 +654,12 @@ monitor (void *arg)
 
       /* Running a watchdog to timeout the subprocess */
       if ((p->limits) && (p->limits->timeout > 0))
-	CHECK_ERROR ((pthread_create (&watchdog_pthread, NULL, watchdog, p) !=
-		      0), "watchdog creation failed");
+	CHECK_ERROR ((pthread_create (&watchdog_pthread, NULL, watchdog, p) != 0),
+		     "watchdog creation failed");
+
+      /* Running the io monitor to watch stdout and stdout */
+      CHECK_ERROR ((pthread_create (&io_pthread, NULL, io_monitor, p) != 0),
+		   "io_monitor creation failed");
 
       /* Set the status to RUNNING */
       p->status = RUNNING;
@@ -630,6 +727,9 @@ monitor (void *arg)
 	}
 
     fail:
+      /* Cleaning the io_monitor */
+      pthread_cancel (io_pthread);
+
       /* Cleaning the watchdog if not already exited */
       if ((p->limits) && (p->limits->timeout > 0))
 	pthread_cancel (watchdog_pthread);
@@ -711,6 +811,18 @@ rlimit_write_stdin (char * msg, subprocess_t * p)
   fflush (p->stdin);
 
   return ret;
+}
+
+char *
+rlimit_read_stdout (subprocess_t * p)
+{
+  return (p->stdout_buffer);
+}
+
+char *
+rlimit_read_stderr (subprocess_t * p)
+{
+  return (p->stderr_buffer);
 }
 
 int

@@ -26,27 +26,12 @@ main ()
   rlimit_subprocess_wait (p);
 
   /***** Checking stdout output *****/
-  char stdout_buff[100];
-
-  /* Check that stdout is non-empty */
-  if (p->stdout)
-    assert (fgets (stdout_buff, 100, p->stdout));
-
-  assert(!strncmp(stdout_buff, "stdout", 6));
-
-  if (p->stdout)
-    assert (fgets (stdout_buff, 100, p->stdout));
-
-  assert(!strncmp(stdout_buff, "42", 2));
+  assert(p->stdout);
+  assert(!strncmp(rlimit_read_stdout (p), "stdout\n42\n", 10));
 
   /***** Checking stderr output *****/
-  char stderr_buff[100];
-
-  /* Check that stderr is empty */
-  if (p->stderr)
-    assert (fgets (stderr_buff, 100, p->stderr));
-
-  assert(!strncmp(stderr_buff, "stderr", 6));
+  assert(p->stderr);
+  assert(!strncmp(rlimit_read_stderr (p), "stderr\n", 7));
 
   /***** Checking return value and status output *****/
   assert (p->retval == EXIT_SUCCESS);
