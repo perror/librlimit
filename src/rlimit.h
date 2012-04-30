@@ -96,10 +96,11 @@ typedef struct subprocess
   FILE *stdout;			/* Subprocess stdout handler */
   FILE *stderr;			/* Subprocess stderr handler */
 
+  char *stdin_buffer;           /* Buffer storing stdin input */
   char *stdout_buffer;          /* Buffer storing stdout output */
   char *stderr_buffer;          /* Buffer storing stderr output */
 
-  pthread_t *monitor;
+  pthread_t *monitor;           /* Reference to the monitor thread */
 
   limits_t *limits;		/* Limits on the subprocess */
   profile_t *profile;		/* Profiling the subprocess */

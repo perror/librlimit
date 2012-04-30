@@ -182,6 +182,7 @@ rlimit_subprocess_create (int argc, char **argv, char **envp)
   p->stdout = NULL;
   p->stderr = NULL;
 
+  p->stdin_buffer = NULL;
   p->stdout_buffer = NULL;
   p->stderr_buffer = NULL;
 
@@ -267,6 +268,7 @@ rlimit_subprocess_delete (subprocess_t * p)
   fclose (p->stderr);
 
   /* Freeing buffers */
+  free (p->stdin_buffer);
   free (p->stdout_buffer);
   free (p->stderr_buffer);
 
@@ -343,12 +345,12 @@ io_monitor (void *arg)
 	  goto fail;
 	}
 
-      ssize_t count;
-      char buffer[256];
+      int count;
+      char buffer_stdout[256], buffer_stderr[256];
 
       if (FD_ISSET(stdout_fd, &rfds))
 	{
-	  while ((count = read (stdout_fd, buffer, 256)) != 0)
+	  while ((count = read (stdout_fd, buffer_stdout, 256)) != 0)
 	    {
 	      if (count == -1)
 		{
@@ -363,7 +365,7 @@ io_monitor (void *arg)
 		    realloc (p->stdout_buffer, stdout_size);
 		}
 
-	      strncat (&(p->stdout_buffer[stdout_current]), buffer, count);
+	      strncat (&(p->stdout_buffer[stdout_current]), buffer_stdout, count);
 	      stdout_current += count;
 	      p->stdout_buffer[stdout_current + 1] = '\0';
 	    }
@@ -371,7 +373,7 @@ io_monitor (void *arg)
 
       if (FD_ISSET(stderr_fd, &rfds))
 	{
-	  while ((count = read (stderr_fd, buffer, 256)) != 0)
+	  while ((count = read (stderr_fd, buffer_stderr, 256)) != 0)
 	    {
 	      if (count == -1)
 		{
@@ -386,14 +388,27 @@ io_monitor (void *arg)
 		    realloc (p->stderr_buffer, stderr_size);
 		}
 
-	      strncat (&(p->stderr_buffer[stderr_current]), buffer, count);
+	      strncat (&(p->stderr_buffer[stderr_current]), buffer_stderr, count);
 	      stderr_current += count;
 	      p->stderr_buffer[stderr_current + 1] = '\0';
 	    }
 	}
+
+      /* TODO: Make it work */
+      if ((FD_ISSET(stdin_fd, &wfds)) && (p->stdin_buffer != NULL))
+	{
+	  count = write (stdin_fd, p->stdin_buffer, strlen(p->stdin_buffer));
+
+	  if (count == -1)
+	    {
+	      rlimit_error ("write() failed");
+	      goto fail;
+	    }
+	  p->stdin_buffer = NULL;
+	}
     }
 
-fail:
+ fail:
   return NULL;
 }
 
@@ -806,7 +821,15 @@ ssize_t
 rlimit_write_stdin (char * msg, subprocess_t * p)
 {
   ssize_t ret;
+  
+  /* TODO: Fill p->stdin_buffer with 'msg' and quit. */
+  //  int msg_size, stdin_size;
 
+  //  while (p->stdin_buffer != NULL)
+  //    sleep (1);
+
+  //  p->stdin_buffer = msg;
+  
   ret = write (fileno (p->stdin), msg, strlen (msg));
   fflush (p->stdin);
 
