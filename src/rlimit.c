@@ -187,6 +187,7 @@ rlimit_subprocess_create (int argc, char **argv, char **envp)
   p->stderr_buffer = NULL;
 
   p->monitor = malloc (sizeof (pthread_t));
+  pthread_mutex_init (&(p->write_mutex), NULL);
 
   /* Initializing the limits and profile to default */
   p->limits = NULL;
@@ -272,8 +273,9 @@ rlimit_subprocess_delete (subprocess_t * p)
   free (p->stdout_buffer);
   free (p->stderr_buffer);
 
-  /* Freeing the monitor */
+  /* Freeing the monitor and write mutex */
   free (p->monitor);
+  pthread_mutex_destroy(&(p->write_mutex));
 
   /* Freeing the limits_t */
   if (p->limits)
@@ -306,7 +308,7 @@ timespec_diff (struct timespec start, struct timespec end)
   return result;
 }
 
-/* IO monitor to watch the stdout and stderr file descriptors */
+/* IO monitor to watch the stdin, stdout and stderr file descriptors */
 static void *
 io_monitor (void *arg)
 {
@@ -335,21 +337,16 @@ io_monitor (void *arg)
 
       nfds = (stdout_fd > stderr_fd) ? stdout_fd : stderr_fd;
       nfds = (stdin_fd > nfds) ? stdin_fd : nfds;
-      nfds += 1;
 
-      int retval = select (nfds, &rfds, &wfds, NULL, NULL);
-
-      if (retval == -1)
-	{
-	  rlimit_error("select failed");
-	  goto fail;
-	}
+      CHECK_ERROR ((select (nfds + 1, &rfds, &wfds, NULL, NULL) == -1),
+		   "select() failed");
 
       int count;
       char buffer_stdout[256], buffer_stderr[256];
 
       if (FD_ISSET(stdout_fd, &rfds))
 	{
+	  fflush (p->stdout);
 	  while ((count = read (stdout_fd, buffer_stdout, 256)) != 0)
 	    {
 	      if (count == -1)
@@ -368,11 +365,14 @@ io_monitor (void *arg)
 	      strncat (&(p->stdout_buffer[stdout_current]), buffer_stdout, count);
 	      stdout_current += count;
 	      p->stdout_buffer[stdout_current + 1] = '\0';
+	      fflush (p->stdout);
+	      count = 0;
 	    }
 	}
 
       if (FD_ISSET(stderr_fd, &rfds))
 	{
+	  fflush (p->stderr);
 	  while ((count = read (stderr_fd, buffer_stderr, 256)) != 0)
 	    {
 	      if (count == -1)
@@ -391,20 +391,25 @@ io_monitor (void *arg)
 	      strncat (&(p->stderr_buffer[stderr_current]), buffer_stderr, count);
 	      stderr_current += count;
 	      p->stderr_buffer[stderr_current + 1] = '\0';
+	      fflush (p->stderr);
 	    }
 	}
 
       /* TODO: Make it work */
       if ((FD_ISSET(stdin_fd, &wfds)) && (p->stdin_buffer != NULL))
 	{
-	  count = write (stdin_fd, p->stdin_buffer, strlen(p->stdin_buffer));
+	  int size = strlen(p->stdin_buffer) + 1;
 
-	  if (count == -1)
+	  count = write (stdin_fd, p->stdin_buffer, size);
+	  fflush (p->stdin);
+
+	  if ((count == -1) && (count != size))
 	    {
 	      rlimit_error ("write() failed");
 	      goto fail;
 	    }
-	  p->stdin_buffer = NULL;
+
+	  free(p->stdin_buffer);
 	}
     }
 
@@ -817,23 +822,28 @@ rlimit_subprocess_resume (subprocess_t * p)
   return ret;
 }
 
-ssize_t
+void
 rlimit_write_stdin (char * msg, subprocess_t * p)
 {
-  ssize_t ret;
-  
-  /* TODO: Fill p->stdin_buffer with 'msg' and quit. */
-  //  int msg_size, stdin_size;
+  ssize_t size = strlen (msg) + 1;
 
-  //  while (p->stdin_buffer != NULL)
-  //    sleep (1);
+  struct timespec tick;
+  tick.tv_sec = 0;
+  tick.tv_nsec = 100;
 
-  //  p->stdin_buffer = msg;
-  
-  ret = write (fileno (p->stdin), msg, strlen (msg));
-  fflush (p->stdin);
+  pthread_mutex_lock(&(p->write_mutex));
+  while (p->stdin_buffer != NULL)
+    nanosleep (&tick, NULL);
 
-  return ret;
+  p->stdin_buffer = malloc (size * sizeof (char));
+
+  strncpy (p->stdin_buffer, msg, size);
+
+  // TODO: Fix this !
+  // Why do we need an extra write to remove a deadlock on the reads ?
+  write (fileno (p->stdin), p->stdin_buffer, size);
+
+  pthread_mutex_unlock (&(p->write_mutex));
 }
 
 char *
