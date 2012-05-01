@@ -347,69 +347,61 @@ io_monitor (void *arg)
       if (FD_ISSET(stdout_fd, &rfds))
 	{
 	  fflush (p->stdout);
-	  while ((count = read (stdout_fd, buffer_stdout, 256)) != 0)
+	  CHECK_ERROR (((count = read (stdout_fd, buffer_stdout, 256)) == -1),
+		       "read(stdout) failed");
+
+	  if ((stdout_current + count + 1) > stdout_size)
 	    {
-	      if (count == -1)
-		{
-		  rlimit_error ("read() failed");
-		  goto fail;
-		}
+	      do {
+		stdout_size += 1024;
+	      }	while ((stdout_current + count + 1) > stdout_size);
 
-	      if ((stdout_current + count + 1) > stdout_size)
-		{
-		  stdout_size += 1024;
-		  p->stdout_buffer =
-		    realloc (p->stdout_buffer, stdout_size);
-		}
-
-	      strncat (&(p->stdout_buffer[stdout_current]), buffer_stdout, count);
-	      stdout_current += count;
-	      p->stdout_buffer[stdout_current + 1] = '\0';
-	      fflush (p->stdout);
-	      count = 0;
+	      p->stdout_buffer =
+		realloc (p->stdout_buffer, stdout_size);
 	    }
+
+	  strncat (&(p->stdout_buffer[stdout_current]), buffer_stdout, count);
+	  stdout_current += count;
+	  p->stdout_buffer[stdout_current + 1] = '\0';
 	}
 
       if (FD_ISSET(stderr_fd, &rfds))
 	{
 	  fflush (p->stderr);
-	  while ((count = read (stderr_fd, buffer_stderr, 256)) != 0)
+	  CHECK_ERROR (((count = read (stderr_fd, buffer_stderr, 256)) == -1),
+		       "read(stderr) failed");
+
+	  if ((stderr_current + count + 1) > stderr_size)
 	    {
-	      if (count == -1)
-		{
-		  rlimit_error ("read() failed");
-		  goto fail;
-		}
+	      do {
+		stderr_size += 1024;
+	      }	while ((stderr_current + count + 1) > stderr_size);
 
-	      if ((stderr_current + count + 1) > stderr_size)
-		{
-		  stderr_size += 1024;
-		  p->stderr_buffer =
-		    realloc (p->stderr_buffer, stderr_size);
-		}
-
-	      strncat (&(p->stderr_buffer[stderr_current]), buffer_stderr, count);
-	      stderr_current += count;
-	      p->stderr_buffer[stderr_current + 1] = '\0';
-	      fflush (p->stderr);
+	      p->stderr_buffer =
+		realloc (p->stderr_buffer, stderr_size);
 	    }
+
+	  strncat (&(p->stderr_buffer[stderr_current]), buffer_stderr, count);
+	  stderr_current += count;
+	  p->stderr_buffer[stderr_current + 1] = '\0';
 	}
 
       /* TODO: Make it work */
       if ((FD_ISSET(stdin_fd, &wfds)) && (p->stdin_buffer != NULL))
 	{
-	  int size = strlen(p->stdin_buffer) + 1;
+	  int size = strlen(p->stdin_buffer);
 
 	  count = write (stdin_fd, p->stdin_buffer, size);
 	  fflush (p->stdin);
 
 	  if ((count == -1) && (count != size))
 	    {
-	      rlimit_error ("write() failed");
+	      rlimit_error ("write(stdin) failed");
 	      goto fail;
 	    }
 
 	  free(p->stdin_buffer);
+	  p->stdin_buffer = NULL;
 	}
     }
 
@@ -825,23 +817,26 @@ rlimit_subprocess_resume (subprocess_t * p)
 void
 rlimit_write_stdin (char * msg, subprocess_t * p)
 {
-  ssize_t size = strlen (msg) + 1;
+  ssize_t size = strlen (msg);
 
   struct timespec tick;
   tick.tv_sec = 0;
   tick.tv_nsec = 100;
 
   pthread_mutex_lock(&(p->write_mutex));
+
   while (p->stdin_buffer != NULL)
     nanosleep (&tick, NULL);
 
   p->stdin_buffer = malloc (size * sizeof (char));
-
   strncpy (p->stdin_buffer, msg, size);
 
   // TODO: Fix this !
   // Why do we need an extra write to remove a deadlock on the reads ?
   write (fileno (p->stdin), p->stdin_buffer, size);
+
+  while (p->stdin_buffer != NULL)
+    nanosleep (&tick, NULL);
 
   pthread_mutex_unlock (&(p->write_mutex));
 }
