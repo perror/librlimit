@@ -825,9 +825,6 @@ rlimit_write_stdin (char * msg, subprocess_t * p)
 
   pthread_mutex_lock(&(p->write_mutex));
 
-  while (p->stdin_buffer != NULL)
-    nanosleep (&tick, NULL);
-
   p->stdin_buffer = malloc (size * sizeof (char));
   strncpy (p->stdin_buffer, msg, size);
 
