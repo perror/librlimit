@@ -2,6 +2,7 @@
 *.a
 *.lo
 *.o
+*.pyc
 *.so
 .deps
 .libs
