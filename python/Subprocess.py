@@ -13,7 +13,7 @@ try:
 except ImportError, err:
     raise ImportError (str(err) + '''
 
-A module required by the Subprocess module was not found.
+A needed module for Subprocess was not found.
 You should install it and try again.
 ''')
 
@@ -49,7 +49,7 @@ class Subprocess(object):
         self.sys_time = None
         self.memory = None
 
-        self.usage = resource.getrusage(resource.RUSAGE_CHILDREN)
+        self.usage = None
 
     def run(self, timeout=None, memoryout=None):
         '''Non-blocking execution.
@@ -59,36 +59,44 @@ class Subprocess(object):
         problem occurs at start time. The user might set a limit over
         the maximum time and memory for the subprocess to run.
         '''
-        def target():
-            '''Inner target() function.'''
-            self.process = subprocess.Popen(self.cmd,
-                                            stdin =subprocess.PIPE,
-                                            stdout=subprocess.PIPE,
-                                            stderr=subprocess.PIPE,
-                                            env=self.env)
-            self.stdout, self.stderr = self.process.communicate()
+        def monitor():
+            '''Monitor thread to timeout the subprocess thread when needed.'''
+            def target():
+                '''Thread running the subprocess and collecting results.'''
+                self.process = subprocess.Popen(self.cmd,
+                                                stdin =subprocess.PIPE,
+                                                stdout=subprocess.PIPE,
+                                                stderr=subprocess.PIPE,
+                                                env=self.env)
+                self.stdout, self.stderr = self.process.communicate()
 
-        if (memoryout is not None):
-            _, hard = resource.getrlimit(resource.RLIMIT_AS)
-            if (memoryout < hard ):
-                resource.setrlimit(resource.RLIMIT_AS, (memoryout, hard))
+            if (memoryout is not None):
+                _, hard = resource.getrlimit(resource.RLIMIT_AS)
+                if (memoryout < hard ):
+                    resource.setrlimit(resource.RLIMIT_AS, (memoryout, hard))
 
-        thread = threading.Thread(target=target)
-        thread.start()
-        start_time = time.time()
+            target_thread = threading.Thread(target=target)
+            target_thread.start()
+            start_time = time.time()
 
-        thread.join(timeout)
-        if thread.is_alive():
-            self.process.terminate()
-            thread.join()
+            target_thread.join(timeout)
+            if target_thread.is_alive():
+                self.process.terminate()
+                target_thread.join()
 
-        self.real_time = time.time() - start_time
-        self.user_time = self.usage.ru_utime
-        self.sys_time =  self.usage.ru_stime
-        self.memory = self.usage.ru_maxrss
+            self.real_time = time.time() - start_time
 
-        self.returncode = self.process.returncode
-        return self.process.returncode
+            self.usage = resource.getrusage(resource.RUSAGE_CHILDREN)
+            self.user_time = self.usage.ru_utime
+            self.sys_time =  self.usage.ru_stime
+            self.memory = self.usage.ru_maxrss
+
+            self.returncode = self.process.returncode
+
+        monitor_thread = threading.Thread(target=monitor)
+        monitor_thread.start()
+        # Introducing an extra delay to initialize the subprocess
+        time.sleep(1.65)
 
     def wait(self):
         '''Restore blocking execution.
@@ -157,22 +165,26 @@ class Subprocess(object):
 
 
 
+# Examples... to be removed later
 
 print('Running...')
-__command__ = Subprocess(['/bin/ls'])
+__process__ = Subprocess(['/bin/ls', '-R', '/'])
 
-__command__.run()
-print("Return code: %d" % __command__.returncode)
-print("Execution time: %f" % __command__.real_time)
-print("User time: %f" % __command__.user_time)
-print("System time: %f" % __command__.sys_time)
-print("Memory: %f" % __command__.memory)
+__process__.run()
+__process__.wait()
+print("Return code: %d" % __process__.returncode)
+print("Execution time: %f" % __process__.real_time)
+print("User time: %f" % __process__.user_time)
+print("System time: %f" % __process__.sys_time)
+print("Memory: %f" % __process__.memory)
 
 
-#__command__.run(timeout=3)
-#print("Return code: %d" % __command__.returncode)
-#print("Execution time: %f" % __command__.real_time)
+__process__.run(timeout=3)
+__process__.wait()
+print("Return code: %d" % __process__.returncode)
+print("Execution time: %f" % __process__.real_time)
 
-#__command__.run(timeout=1)
-#print("Return code: %d" % __command__.returncode)
-#print("Execution time: %f" % __command__.real_time)
+__process__.run(timeout=1)
+__process__.wait()
+print("Return code: %d" % __process__.returncode)
+print("Execution time: %f" % __process__.real_time)
