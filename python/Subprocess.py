@@ -5,6 +5,7 @@ black-box testing purpose in an educational context.
 '''
 
 try:
+    import os
     import resource
     import select
     import subprocess
@@ -49,9 +50,7 @@ class Subprocess(object):
         self.sys_time = None
         self.memory = None
 
-        self.usage = None
-
-    def run(self, timeout=None, memoryout=None):
+    def run(self, timeout=None, memory=None):
         '''Non-blocking execution.
 
         The subprocess will be run in a separate thread. This function
@@ -61,42 +60,57 @@ class Subprocess(object):
         '''
         def monitor():
             '''Monitor thread to timeout the subprocess thread when needed.'''
+            def setlimits(memory):
+                if (memory is not None):
+                    # Setting limit on stack memory
+                    soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
+                    if ((hard == -1) or (hard > memory)):
+                        resource.setrlimit(resource.RLIMIT_STACK,
+                                           (memory, hard))
+                    # Setting limit on heap memory
+                    soft, hard = resource.getrlimit(resource.RLIMIT_DATA)
+                    if ((hard == -1) or (hard > memory)):
+                        resource.setrlimit(resource.RLIMIT_DATA,
+                                           (memory, hard))
             def target():
                 '''Thread running the subprocess and collecting results.'''
                 self.process = subprocess.Popen(self.cmd,
                                                 stdin =subprocess.PIPE,
                                                 stdout=subprocess.PIPE,
                                                 stderr=subprocess.PIPE,
+                                                preexec_fn=setlimits(memory),
                                                 env=self.env)
-                self.stdout, self.stderr = self.process.communicate()
 
-            if (memoryout is not None):
-                _, hard = resource.getrlimit(resource.RLIMIT_AS)
-                if (memoryout < hard ):
-                    resource.setrlimit(resource.RLIMIT_AS, (memoryout, hard))
+                start = time.time()
+                self.stdout, self.stderr = self.process.communicate()
+                self.real_time = (time.time() - start)
+
+                usage = resource.getrusage(resource.RUSAGE_CHILDREN)
+                self.user_time = usage.ru_utime
+                self.sys_time =  usage.ru_stime
+                self.memory = usage.ru_maxrss
+
+                self.returncode = self.process.returncode
+
+                # Restore the limits afterwards
+                resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
+                resource.setrlimit(resource.RLIMIT_DATA, (-1, -1))
 
             target_thread = threading.Thread(target=target)
             target_thread.start()
-            start_time = time.time()
 
             target_thread.join(timeout)
             if target_thread.is_alive():
                 self.process.terminate()
                 target_thread.join()
 
-            self.real_time = time.time() - start_time
-
-            self.usage = resource.getrusage(resource.RUSAGE_CHILDREN)
-            self.user_time = self.usage.ru_utime
-            self.sys_time =  self.usage.ru_stime
-            self.memory = self.usage.ru_maxrss
-
-            self.returncode = self.process.returncode
-
         monitor_thread = threading.Thread(target=monitor)
         monitor_thread.start()
-        # Introducing an extra delay to initialize the subprocess
-        time.sleep(1.65)
+        # Delaying until the process is launched
+        while (True):
+            time.sleep(0.15)
+            if (self.process is not None):
+                break
 
     def wait(self):
         '''Restore blocking execution.
@@ -104,7 +118,11 @@ class Subprocess(object):
         This command wait for the subprocess to end and returns with
         the subprocess return code.
         '''
-        return self.process.wait()
+        while (True):
+            time.sleep(0.15)
+            if (self.process.poll() is not None):
+                break
+        return self.process.returncode
 
     def read(self):
         '''Read (stdout, stderr) from the subprocess.'''
@@ -168,9 +186,9 @@ class Subprocess(object):
 # Examples... to be removed later
 
 print('Running...')
-__process__ = Subprocess(['/bin/ls', '-R', '/'])
+__process__ = Subprocess(['sleep', '5'])
 
-__process__.run()
+__process__.run(memory=50000)
 __process__.wait()
 print("Return code: %d" % __process__.returncode)
 print("Execution time: %f" % __process__.real_time)
