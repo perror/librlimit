@@ -10,7 +10,7 @@ try:
     import subprocess
     import threading
     import time
-except ImportError, err:
+except ImportError as err:
     raise ImportError (str(err) + '''
 
 A needed module for Subprocess was not found.
