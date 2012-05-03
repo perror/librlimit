@@ -5,7 +5,6 @@ black-box testing purpose in an educational context.
 '''
 
 try:
-    import os
     import resource
     import select
     import subprocess
@@ -63,24 +62,30 @@ class Subprocess(object):
             def setlimits(memory):
                 if (memory is not None):
                     # Setting limit on stack memory
-                    soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
+                    _, hard = resource.getrlimit(resource.RLIMIT_STACK)
                     if ((hard == -1) or (hard > memory)):
                         resource.setrlimit(resource.RLIMIT_STACK,
                                            (memory, hard))
                     # Setting limit on heap memory
-                    soft, hard = resource.getrlimit(resource.RLIMIT_DATA)
+                    _, hard = resource.getrlimit(resource.RLIMIT_DATA)
                     if ((hard == -1) or (hard > memory)):
                         resource.setrlimit(resource.RLIMIT_DATA,
                                            (memory, hard))
             def target():
                 '''Thread running the subprocess and collecting results.'''
+                # Save the limit values
+                if (memory is not None):
+                    stack_soft, stack_hard = \
+                        resource.getrlimit(resource.RLIMIT_STACK)
+                    data_soft, data_hard = \
+                        resource.getrlimit(resource.RLIMIT_DATA)
+
                 self.process = subprocess.Popen(self.cmd,
                                                 stdin =subprocess.PIPE,
                                                 stdout=subprocess.PIPE,
                                                 stderr=subprocess.PIPE,
                                                 preexec_fn=setlimits(memory),
                                                 env=self.env)
-
                 start = time.time()
                 self.stdout, self.stderr = self.process.communicate()
                 self.real_time = (time.time() - start)
@@ -92,9 +97,12 @@ class Subprocess(object):
 
                 self.returncode = self.process.returncode
 
-                # Restore the limits afterwards
-                resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
-                resource.setrlimit(resource.RLIMIT_DATA, (-1, -1))
+                # Restore the limit values afterwards
+                if (memory is not None):
+                    resource.setrlimit(resource.RLIMIT_STACK,
+                                       (stack_soft, stack_hard))
+                    resource.setrlimit(resource.RLIMIT_DATA,
+                                       (data_soft, data_hard))
 
             target_thread = threading.Thread(target=target)
             target_thread.start()
@@ -124,10 +132,6 @@ class Subprocess(object):
                 break
         return self.process.returncode
 
-    def read(self):
-        '''Read (stdout, stderr) from the subprocess.'''
-        return (self.stdout, self.stderr)
-
     def write(self, msg):
         '''Write to the stdin of the subprocess.
 
@@ -138,7 +142,7 @@ class Subprocess(object):
             _, inputready, _ = \
                 select.select([], [self.process.stdin], [])
 
-            if inputready.count() == 1:
+            if inputready[0] == self.process.stdin:
                 self.process.stdin.write(msg)
                 self.process.stdin.flush()
                 break
@@ -172,7 +176,7 @@ class Subprocess(object):
         Returns the returncode attribute ('None' means the subprocess
         is still running).
         '''
-        return self.returncode
+        return self.process.returncode
 
     def terminate(self):
         '''Terminate the subprocess.
@@ -186,8 +190,10 @@ class Subprocess(object):
 # Examples... to be removed later
 
 print('Running...')
-__process__ = Subprocess(['sleep', '5'])
+print("")
+__process__ = Subprocess(['sleep', '3'])
 
+print("First run:")
 __process__.run(memory=50000)
 __process__.wait()
 print("Return code: %d" % __process__.returncode)
@@ -195,13 +201,16 @@ print("Execution time: %f" % __process__.real_time)
 print("User time: %f" % __process__.user_time)
 print("System time: %f" % __process__.sys_time)
 print("Memory: %f" % __process__.memory)
+print("")
 
-
-__process__.run(timeout=3)
+print("Second run:")
+__process__.run(timeout=5)
 __process__.wait()
 print("Return code: %d" % __process__.returncode)
 print("Execution time: %f" % __process__.real_time)
+print("")
 
+print("Third run:")
 __process__.run(timeout=1)
 __process__.wait()
 print("Return code: %d" % __process__.returncode)
