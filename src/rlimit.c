@@ -118,6 +118,7 @@ rlimit_subprocess_create (int argc, char **argv, char **envp)
   if (p->argv == NULL)
     {
       free (p);
+      p = NULL;
       CHECK_ERROR (true, "subprocess allocation failed");
     }
 
@@ -131,6 +132,7 @@ rlimit_subprocess_create (int argc, char **argv, char **envp)
 	    free (p->argv[i--]);
 	  free (p->argv);
 	  free (p);
+	  p = NULL;
 	  CHECK_ERROR (true, "subprocess allocation failed");
 	}
 
@@ -152,7 +154,11 @@ rlimit_subprocess_create (int argc, char **argv, char **envp)
       /* Handling 'out of memory' */
       if (p->envp == NULL)
 	{
+	  for (int i = 0; p->argv[i] != NULL; i++)
+	    free (p->argv[i]);
+	  free (p->argv);
 	  free (p);
+	  p = NULL;
 	  CHECK_ERROR (true, "subprocess allocation failed");
 	}
 
@@ -162,10 +168,14 @@ rlimit_subprocess_create (int argc, char **argv, char **envp)
 	  /* Handling 'out of memory' */
 	  if (p->envp[i] == NULL)
 	    {
+	      for (int i = 0; p->argv[i] != NULL; i++)
+		free (p->argv[i]);
+	      free (p->argv);
 	      while (i >= 0)
 		free (p->envp[i--]);
 	      free (p->envp);
 	      free (p);
+	      p = NULL;
 	      CHECK_ERROR (true, "subprocess allocation failed");
 	    }
 
