@@ -364,13 +364,11 @@ io_monitor (void *arg)
 
 	  if ((stdout_current + count + 1) > stdout_size)
 	    {
-	      do
-		{
-		  stdout_size += 1024;
-		}
-	      while ((stdout_current + count + 1) > stdout_size);
+	      stdout_size =
+		((stdout_current + count + 1 - stdout_size) / 1024 + 1) * 1024;
 
 	      p->stdout_buffer = realloc (p->stdout_buffer, stdout_size);
+	      CHECK_ERROR ((p->stdout_buffer == NULL), "stdout read failed");
 	    }
 
 	  strncat (&(p->stdout_buffer[stdout_current]), buffer_stdout, count);
@@ -387,13 +385,11 @@ io_monitor (void *arg)
 
 	  if ((stderr_current + count + 1) > stderr_size)
 	    {
-	      do
-		{
-		  stderr_size += 1024;
-		}
-	      while ((stderr_current + count + 1) > stderr_size);
+	      stderr_size =
+		((stderr_current + count + 1 - stderr_size) / 1024 + 1) * 1024;
 
 	      p->stderr_buffer = realloc (p->stderr_buffer, stderr_size);
+	      CHECK_ERROR ((p->stderr_buffer == NULL), "stderr read failed");
 	    }
 
 	  strncat (&(p->stderr_buffer[stderr_current]), buffer_stderr, count);
