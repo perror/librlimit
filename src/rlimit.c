@@ -323,7 +323,7 @@ timespec_diff (struct timespec start, struct timespec end)
 static void *
 io_monitor (void *arg)
 {
-  subprocess_t *p = (subprocess_t *) arg;
+  subprocess_t *p = arg;
 
   int nfds;
   fd_set rfds, wfds;
@@ -428,7 +428,7 @@ fail:
 static void *
 watchdog (void *arg)
 {
-  subprocess_t *p = (subprocess_t *) arg;
+  subprocess_t *p = arg;
 
   CHECK_ERROR ((pthread_detach (pthread_self ()) != 0),
 	       "pthread_detach failed");
