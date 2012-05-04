@@ -198,6 +198,8 @@ rlimit_subprocess_create (int argc, char **argv, char **envp)
   p->stderr_buffer = NULL;
 
   p->monitor = malloc (sizeof (pthread_t));
+  CHECK_ERROR ((p->monitor == NULL), "p->monitor allocation failed");
+
   pthread_mutex_init (&(p->write_mutex), NULL);
 
   /* Initializing the limits and profile to default */
@@ -212,7 +214,6 @@ static limits_t *
 limits_new (void)
 {
   limits_t *limits = malloc (sizeof (limits_t));
-  /* Handling 'out of memory' */
   CHECK_ERROR ((limits == NULL), "limits allocation failed");
 
   /* Default initialization of limits */
@@ -223,7 +224,6 @@ limits_new (void)
   limits->proc = 0;
 
   limits->syscalls = malloc (sizeof (int));
-  /* Handling 'out of memory' */
   CHECK_ERROR ((limits->syscalls == NULL), "limits allocation failed");
 
   limits->syscalls[0] = 0;
@@ -840,6 +840,7 @@ rlimit_write_stdin (char *msg, subprocess_t * p)
   pthread_mutex_lock (&(p->write_mutex));
 
   char * tmp = malloc (size * sizeof (char));
+  CHECK_ERROR ((tmp == NULL), "write failed");
   strncpy (tmp, msg, size);
 
   p->stdin_buffer = tmp;
@@ -847,6 +848,7 @@ rlimit_write_stdin (char *msg, subprocess_t * p)
   while (p->stdin_buffer != NULL)
     nanosleep (&tick, NULL);
 
+ fail:
   pthread_mutex_unlock (&(p->write_mutex));
 }
 
