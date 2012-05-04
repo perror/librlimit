@@ -89,7 +89,8 @@ rlimit_warning (char *msg)
   /* Concatenate 'warning'+': '+'msg' when 'msg != NULL' */
   if (msg)
     {
-      if ((s = malloc (snprintf (NULL, 0, "%s: %s", warning, msg) + 1)) == NULL)
+      if ((s =
+	   malloc (snprintf (NULL, 0, "%s: %s", warning, msg) + 1)) == NULL)
 	s = error;
       else
 	sprintf (s, "%s: %s", warning, msg);
@@ -275,7 +276,7 @@ rlimit_subprocess_delete (subprocess_t * p)
 
   /* Freeing the monitor and write mutex */
   free (p->monitor);
-  pthread_mutex_destroy(&(p->write_mutex));
+  pthread_mutex_destroy (&(p->write_mutex));
 
   /* Freeing the limits_t */
   if (p->limits)
@@ -332,7 +333,7 @@ io_monitor (void *arg)
       FD_SET (stdout_fd, &rfds);
       FD_SET (stderr_fd, &rfds);
 
-      FD_ZERO(&wfds);
+      FD_ZERO (&wfds);
       FD_SET (stdin_fd, &wfds);
 
       nfds = (stdout_fd > stderr_fd) ? stdout_fd : stderr_fd;
@@ -344,22 +345,23 @@ io_monitor (void *arg)
       size_t count;
       char buffer_stdout[256], buffer_stderr[256];
 
-      if (FD_ISSET(stdout_fd, &rfds))
+      if (FD_ISSET (stdout_fd, &rfds))
 	{
 	  fflush (p->stdout);
 	  CHECK_ERROR (((int) (count = read (stdout_fd,
 					     buffer_stdout,
-					     sizeof(buffer_stdout))) == -1),
+					     sizeof (buffer_stdout))) == -1),
 		       "read(stdout) failed");
 
 	  if ((stdout_current + count + 1) > stdout_size)
 	    {
-	      do {
-		stdout_size += 1024;
-	      }	while ((stdout_current + count + 1) > stdout_size);
+	      do
+		{
+		  stdout_size += 1024;
+		}
+	      while ((stdout_current + count + 1) > stdout_size);
 
-	      p->stdout_buffer =
-		realloc (p->stdout_buffer, stdout_size);
+	      p->stdout_buffer = realloc (p->stdout_buffer, stdout_size);
 	    }
 
 	  strncat (&(p->stdout_buffer[stdout_current]), buffer_stdout, count);
@@ -367,22 +369,23 @@ io_monitor (void *arg)
 	  p->stdout_buffer[stdout_current + 1] = '\0';
 	}
 
-      if (FD_ISSET(stderr_fd, &rfds))
+      if (FD_ISSET (stderr_fd, &rfds))
 	{
 	  fflush (p->stderr);
 	  CHECK_ERROR (((int) (count = read (stderr_fd,
 					     buffer_stderr,
-					     sizeof(buffer_stderr))) == -1),
+					     sizeof (buffer_stderr))) == -1),
 		       "read(stderr) failed");
 
 	  if ((stderr_current + count + 1) > stderr_size)
 	    {
-	      do {
-		stderr_size += 1024;
-	      }	while ((stderr_current + count + 1) > stderr_size);
+	      do
+		{
+		  stderr_size += 1024;
+		}
+	      while ((stderr_current + count + 1) > stderr_size);
 
-	      p->stderr_buffer =
-		realloc (p->stderr_buffer, stderr_size);
+	      p->stderr_buffer = realloc (p->stderr_buffer, stderr_size);
 	    }
 
 	  strncat (&(p->stderr_buffer[stderr_current]), buffer_stderr, count);
@@ -391,9 +394,9 @@ io_monitor (void *arg)
 	}
 
       /* TODO: Make it work */
-      if ((FD_ISSET(stdin_fd, &wfds)) && (p->stdin_buffer != NULL))
+      if ((FD_ISSET (stdin_fd, &wfds)) && (p->stdin_buffer != NULL))
 	{
-	  size_t size = strlen(p->stdin_buffer);
+	  size_t size = strlen (p->stdin_buffer);
 
 	  count = write (stdin_fd, p->stdin_buffer, size);
 
@@ -403,12 +406,12 @@ io_monitor (void *arg)
 	      goto fail;
 	    }
 
-	  free(p->stdin_buffer);
+	  free (p->stdin_buffer);
 	  p->stdin_buffer = NULL;
 	}
     }
 
- fail:
+fail:
   return NULL;
 }
 
@@ -554,7 +557,7 @@ child_monitor (int stdin_pipe[2], int stdout_pipe[2], int stderr_pipe[2],
 }
 
 static int
-syscall_filter (int * status, struct rusage * usage, subprocess_t * p)
+syscall_filter (int *status, struct rusage *usage, subprocess_t * p)
 {
   int syscall_id;
   bool syscall_enter = true;
@@ -566,8 +569,7 @@ syscall_filter (int * status, struct rusage * usage, subprocess_t * p)
 
       CHECK_ERROR ((ptrace (PTRACE_SYSCALL, p->pid, NULL, NULL) == -1),
 		   "ptrace failed");
-      CHECK_ERROR ((wait4 (p->pid, status, 0, usage) == -1),
-		   "wait failed");
+      CHECK_ERROR ((wait4 (p->pid, status, 0, usage) == -1), "wait failed");
 
       if (WIFEXITED (*status) || WIFSIGNALED (*status) || WCOREDUMP (*status))
 	break;
@@ -649,7 +651,7 @@ monitor (void *arg)
 				   stderr_pipe, p) == RETURN_FAILURE),
 		   "child monitor failed");
     }
-  else			/***** Parent process *****/
+  else			    /***** Parent process *****/
     {
       int status;
       pthread_t watchdog_pthread, io_pthread;
@@ -669,8 +671,8 @@ monitor (void *arg)
 
       /* Running a watchdog to timeout the subprocess */
       if ((p->limits) && (p->limits->timeout > 0))
-	CHECK_ERROR ((pthread_create (&watchdog_pthread, NULL, watchdog, p) != 0),
-		     "watchdog creation failed");
+	CHECK_ERROR ((pthread_create (&watchdog_pthread, NULL, watchdog, p) !=
+		      0), "watchdog creation failed");
 
       /* Running the io monitor to watch stdout and stdout */
       CHECK_ERROR ((pthread_create (&io_pthread, NULL, io_monitor, p) != 0),
@@ -818,7 +820,7 @@ rlimit_subprocess_resume (subprocess_t * p)
 }
 
 void
-rlimit_write_stdin (char * msg, subprocess_t * p)
+rlimit_write_stdin (char *msg, subprocess_t * p)
 {
   ssize_t size = strlen (msg);
 
@@ -826,7 +828,7 @@ rlimit_write_stdin (char * msg, subprocess_t * p)
   tick.tv_sec = 0;
   tick.tv_nsec = 100;
 
-  pthread_mutex_lock(&(p->write_mutex));
+  pthread_mutex_lock (&(p->write_mutex));
 
   p->stdin_buffer = malloc (size * sizeof (char));
   strncpy (p->stdin_buffer, msg, size);
@@ -862,7 +864,7 @@ rlimit_subprocess_poll (subprocess_t * p)
 int
 rlimit_subprocess_wait (subprocess_t * p)
 {
-  if (pthread_join(*(p->monitor), NULL) != 0)
+  if (pthread_join (*(p->monitor), NULL) != 0)
     perror ("pthread_join to monitor failed");
 
   return p->retval;

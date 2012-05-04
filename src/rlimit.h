@@ -96,12 +96,12 @@ typedef struct subprocess
   FILE *stdout;			/* Subprocess stdout handler */
   FILE *stderr;			/* Subprocess stderr handler */
 
-  char *stdin_buffer;           /* Buffer storing stdin input */
-  char *stdout_buffer;          /* Buffer storing stdout output */
-  char *stderr_buffer;          /* Buffer storing stderr output */
+  char *stdin_buffer;		/* Buffer storing stdin input */
+  char *stdout_buffer;		/* Buffer storing stdout output */
+  char *stderr_buffer;		/* Buffer storing stderr output */
 
-  pthread_t *monitor;           /* Reference to the monitor thread */
-  pthread_mutex_t write_mutex;  /* Mutex locking the writing on stdin */
+  pthread_t *monitor;		/* Reference to the monitor thread */
+  pthread_mutex_t write_mutex;	/* Mutex locking the writing on stdin */
 
   limits_t *limits;		/* Limits on the subprocess */
   profile_t *profile;		/* Profiling the subprocess */
@@ -127,7 +127,7 @@ int rlimit_subprocess_suspend (subprocess_t * p);
 int rlimit_subprocess_resume (subprocess_t * p);
 
 /* Handling input/output to a subprocess */
-void  rlimit_write_stdin (char * msg, subprocess_t * p);
+void rlimit_write_stdin (char *msg, subprocess_t * p);
 char *rlimit_read_stdout (subprocess_t * p);
 char *rlimit_read_stderr (subprocess_t * p);
 
