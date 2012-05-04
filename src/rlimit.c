@@ -677,11 +677,10 @@ monitor (void *arg)
 	CHECK_ERROR ((pthread_create (&watchdog_pthread, NULL, watchdog, p) !=
 		      0), "watchdog creation failed");
 
-      /* Running the io monitor to watch stdout and stdout */
+      /* Running the io monitor to watch stdout and stderr */
       CHECK_ERROR ((pthread_create (&io_pthread, NULL, io_monitor, p) != 0),
 		   "io_monitor creation failed");
 
-      /* Set the status to RUNNING */
       p->status = RUNNING;
 
       /* Waiting for synchronization with monitored process */
@@ -835,6 +834,7 @@ rlimit_write_stdin (char *msg, subprocess_t * p)
 
   char * tmp = malloc (size * sizeof (char));
   CHECK_ERROR ((tmp == NULL), "write failed");
+
   strncpy (tmp, msg, size);
 
   p->stdin_buffer = tmp;
