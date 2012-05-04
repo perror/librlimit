@@ -393,7 +393,6 @@ io_monitor (void *arg)
 	  p->stderr_buffer[stderr_current + 1] = '\0';
 	}
 
-      /* TODO: Make it work */
       if ((FD_ISSET (stdin_fd, &wfds)) && (p->stdin_buffer != NULL))
 	{
 	  size_t size = strlen (p->stdin_buffer);
@@ -830,12 +829,10 @@ rlimit_write_stdin (char *msg, subprocess_t * p)
 
   pthread_mutex_lock (&(p->write_mutex));
 
-  p->stdin_buffer = malloc (size * sizeof (char));
-  strncpy (p->stdin_buffer, msg, size);
+  char * tmp = malloc (size * sizeof (char));
+  strncpy (tmp, msg, size);
 
-  // TODO: Fix this !
-  // Why do we need an extra write to remove a deadlock on the reads ?
-  write (fileno (p->stdin), p->stdin_buffer, size);
+  p->stdin_buffer = tmp;
 
   while (p->stdin_buffer != NULL)
     nanosleep (&tick, NULL);

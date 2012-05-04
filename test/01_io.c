@@ -27,9 +27,6 @@ main ()
 
   /***** Checking stdout output *****/
   assert(p->stdout);
-
-  printf ("stdout:\n%s", p->stdout_buffer); // DEBUG: to be removed
-
   assert(!strncmp(rlimit_read_stdout (p), "stdout\n42\n", 10));
 
   /***** Checking stderr output *****/
