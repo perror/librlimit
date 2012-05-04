@@ -8,8 +8,7 @@ Here a few items that (may) need to be completed in the future versions:
 * [feature] Provide a more efficient data-structure to store and
   access the syscalls.
 
-* [bug] Code a proper rlimit_write_stdin() function with an
-  intermediate buffer that wait until stdin is ready to write to it.
+* [feature] Provide an 'expect' interface
 
 
 ***** test/ *****
@@ -26,4 +25,3 @@ Future milestones
 ******************
 version 1.0: API stabilization and bug fixing
 version 0.9: documentation
-version 0.8: Python binding

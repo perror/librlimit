@@ -1,3 +1,9 @@
+2012-05-04  Emmanuel Fleury  <emmanuel.fleury@labri.fr>
+
+	* Release version 0.8
+	* Feature complete (except for the 'expect' API)
+	* Fixed race conditions (again) and other bugs
+
 2012-04-30  Emmanuel Fleury  <emmanuel.fleury@labri.fr>
 
 	* Release version 0.7
