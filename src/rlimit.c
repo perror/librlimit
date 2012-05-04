@@ -357,7 +357,6 @@ io_monitor (void *arg)
 
       if (FD_ISSET (stdout_fd, &rfds))
 	{
-	  fflush (p->stdout);
 	  CHECK_ERROR (((int) (count = read (stdout_fd,
 					     buffer_stdout,
 					     sizeof (buffer_stdout))) == -1),
@@ -381,7 +380,6 @@ io_monitor (void *arg)
 
       if (FD_ISSET (stderr_fd, &rfds))
 	{
-	  fflush (p->stderr);
 	  CHECK_ERROR (((int) (count = read (stderr_fd,
 					     buffer_stderr,
 					     sizeof (buffer_stderr))) == -1),
