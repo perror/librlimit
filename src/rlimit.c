@@ -321,10 +321,10 @@ io_monitor (void *arg)
   int stderr_fd = fileno (p->stderr);
   int stdin_fd = fileno (p->stdin);
 
-  int stdout_size = 0;
-  int stdout_current = 0;
-  int stderr_size = 0;
-  int stderr_current = 0;
+  size_t stdout_size = 0;
+  size_t stdout_current = 0;
+  size_t stderr_size = 0;
+  size_t stderr_current = 0;
 
   while (true)
     {
@@ -341,13 +341,13 @@ io_monitor (void *arg)
       CHECK_ERROR ((select (nfds + 1, &rfds, &wfds, NULL, NULL) == -1),
 		   "select() failed");
 
-      int count;
+      size_t count;
       char buffer_stdout[256], buffer_stderr[256];
 
       if (FD_ISSET(stdout_fd, &rfds))
 	{
 	  fflush (p->stdout);
-	  CHECK_ERROR (((count = read (stdout_fd, buffer_stdout, 256)) == -1),
+	  CHECK_ERROR (((int) (count = read (stdout_fd, buffer_stdout, 256)) == -1),
 		       "read(stdout) failed");
 
 	  if ((stdout_current + count + 1) > stdout_size)
@@ -368,7 +368,7 @@ io_monitor (void *arg)
       if (FD_ISSET(stderr_fd, &rfds))
 	{
 	  fflush (p->stderr);
-	  CHECK_ERROR (((count = read (stderr_fd, buffer_stderr, 256)) == -1),
+	  CHECK_ERROR (((int) (count = read (stderr_fd, buffer_stderr, 256)) == -1),
 		       "read(stderr) failed");
 
 	  if ((stderr_current + count + 1) > stderr_size)
@@ -389,12 +389,11 @@ io_monitor (void *arg)
       /* TODO: Make it work */
       if ((FD_ISSET(stdin_fd, &wfds)) && (p->stdin_buffer != NULL))
 	{
-	  int size = strlen(p->stdin_buffer);
+	  size_t size = strlen(p->stdin_buffer);
 
 	  count = write (stdin_fd, p->stdin_buffer, size);
-	  fflush (p->stdin);
 
-	  if ((count == -1) && (count != size))
+	  if (((int) count == -1) && (count != size))
 	    {
 	      rlimit_error ("write(stdin) failed");
 	      goto fail;
