@@ -164,7 +164,7 @@ rlimit_subprocess_create (int argc, char **argv, char **envp)
 
       for (int i = 0; i < envp_size; i++)
 	{
-	  p->envp[i] = malloc (strlen (envp[i]) * sizeof (char));
+	  p->envp[i] = malloc (strlen (envp[i] + 1) * sizeof (char));
 	  /* Handling 'out of memory' */
 	  if (p->envp[i] == NULL)
 	    {
