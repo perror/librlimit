@@ -1,9 +1,5 @@
 Here a few items that (may) need to be completed in the future versions:
 
-***** python/ *****
-* [feature] Provide a Python binding (I need it for later).
-
-
 ***** src/ *****
 * [feature] Provide a more efficient data-structure to store and
   access the syscalls.
