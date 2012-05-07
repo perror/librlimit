@@ -10,8 +10,6 @@ main ()
   char *myargv[] = { "./utils/test_malloc" };
 
   subprocess_t *p = rlimit_subprocess_create (myargc, myargv, NULL);
-
-  rlimit_subprocess_profile (p);
   
   rlimit_subprocess_run (p);
   rlimit_subprocess_wait (p);

@@ -204,7 +204,14 @@ rlimit_subprocess_create (int argc, char **argv, char **envp)
 
   /* Initializing the limits and profile to default */
   p->limits = NULL;
-  p->profile = NULL;
+
+  CHECK_ERROR (((p->profile = malloc (sizeof (profile_t))) == NULL),
+	       "initialization of profiling failed");
+
+  p->profile->real_time_usec = 0;
+  p->profile->user_time_usec = 0;
+  p->profile->sys_time_usec = 0;
+  p->profile->memory_kbytes = 0;
 
 fail:
   return p;
@@ -640,9 +647,8 @@ monitor (void *arg)
 	       "sigprocmask failed");
 
   /* Getting start time of the subprocess (profiling information) */
-  if (p->profile != NULL)
-    CHECK_ERROR ((clock_gettime (CLOCK_MONOTONIC, &start_time) == -1),
-		 "getting start time failed");
+  CHECK_ERROR ((clock_gettime (CLOCK_MONOTONIC, &start_time) == -1),
+	       "getting start time failed");
 
   /* Forking the process */
   CHECK_ERROR (((p->pid = fork ()) == -1), "fork failed");
@@ -696,17 +702,14 @@ monitor (void *arg)
       /***** The subprocess is finished now *****/
 
       /* Getting end time of the subprocess (profiling information) */
-      if (p->profile != NULL)
-	{
-	  struct timespec tmp_time, end_time;
+      struct timespec tmp_time, end_time;
 
-	  CHECK_ERROR ((clock_gettime (CLOCK_MONOTONIC, &end_time) == -1),
-		       "getting end time failed");
-	  tmp_time = timespec_diff (start_time, end_time);
+      CHECK_ERROR ((clock_gettime (CLOCK_MONOTONIC, &end_time) == -1),
+		   "getting end time failed");
+      tmp_time = timespec_diff (start_time, end_time);
 
-	  p->profile->real_time_usec =
-	    (time_t) (tmp_time.tv_sec * 1000000 + tmp_time.tv_nsec / 1000);
-	}
+      p->profile->real_time_usec =
+	(time_t) (tmp_time.tv_sec * 1000000 + tmp_time.tv_nsec / 1000);
 
       /* Finding out what the status and retval are really */
       if (WIFEXITED (status))
@@ -754,19 +757,16 @@ monitor (void *arg)
 	pthread_cancel (watchdog_pthread);
 
       /* Cleaning and setting the profile information */
-      if (p->profile != NULL)
-	{
-	  /* User time in us */
-	  p->profile->user_time_usec =
-	    usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec;
+      /* User time in us */
+      p->profile->user_time_usec =
+	usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec;
 
-	  /* System time in us */
-	  p->profile->sys_time_usec =
-	    usage.ru_stime.tv_sec * 1000 + usage.ru_stime.tv_usec;
+      /* System time in us */
+      p->profile->sys_time_usec =
+	usage.ru_stime.tv_sec * 1000 + usage.ru_stime.tv_usec;
 
-	  /* Memory usage */
-	  p->profile->memory_kbytes = usage.ru_maxrss;
-	}
+      /* Memory usage */
+      p->profile->memory_kbytes = usage.ru_maxrss;
     }
 
   return NULL;
@@ -1042,72 +1042,26 @@ rlimit_get_disabled_syscalls (subprocess_t * p)
 
 
 /***** Profile information *****/
-int
-rlimit_subprocess_profile (subprocess_t * p)
-{
-  int ret = RETURN_SUCCESS;
-
-  if (p->profile == NULL)
-    p->profile = malloc (sizeof (profile_t));
-
-  if (p->profile == NULL)
-    {
-      perror ("profiling failed");
-      goto fail;
-    }
-
-  p->profile->real_time_usec = 0;
-  p->profile->user_time_usec = 0;
-  p->profile->sys_time_usec = 0;
-  p->profile->memory_kbytes = 0;
-
-  if (false)
-  fail:
-    ret = RETURN_FAILURE;
-
-  return ret;
-}
-
 time_t
 rlimit_get_real_time (subprocess_t * p)
 {
-  int ret = 0;
-
-  if (p->profile)
-    ret = p->profile->real_time_usec;
-
-  return ret;
+  return p->profile->real_time_usec;
 }
 
 time_t
 rlimit_get_user_time (subprocess_t * p)
 {
-  int ret = 0;
-
-  if (p->profile)
-    ret = p->profile->user_time_usec;
-
-  return ret;
+  return p->profile->user_time_usec;
 }
 
 time_t
 rlimit_get_sys_time (subprocess_t * p)
 {
-  int ret = 0;
-
-  if (p->profile)
-    ret = p->profile->sys_time_usec;
-
-  return ret;
+  return p->profile->sys_time_usec;
 }
 
 size_t
 rlimit_get_memory (subprocess_t * p)
 {
-  int ret = 0;
-
-  if (p->profile)
-    ret = p->profile->memory_kbytes;
-
-  return ret;
+  return p->profile->memory_kbytes;
 }

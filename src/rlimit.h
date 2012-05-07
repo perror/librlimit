@@ -169,9 +169,6 @@ int *rlimit_get_disabled_syscalls (subprocess_t * p);
 
 /* Getting subprocess profiling information */
 /* **************************************** */
-/* Initialize the profiler for the subprocess */
-int rlimit_subprocess_profile (subprocess_t * p);
-
 /* Time spend in total by the process (idle time included) */
 time_t rlimit_get_real_time_profile (subprocess_t * p);
 /* Time spend in user-land by the subprocess and its childs */
