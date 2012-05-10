@@ -590,7 +590,7 @@ syscall_filter (int *status, struct rusage *usage, subprocess_t * p)
       /* Getting syscall number is architecture dependant */
 #if __WORDSIZE == 64
       syscall_id = regs.orig_rax;
-#elif __WORSIZE == 32
+#elif __WORDSIZE == 32
       syscall_id = regs.orig_eax;
 #endif
 
