@@ -453,8 +453,11 @@ watchdog (void *arg)
 	    }
 	  else if (errno == EAGAIN)
 	    {
-	      p->status = TIMEOUT;
-	      kill (p->pid, SIGKILL);
+	      if (p->status < TERMINATED)
+		{
+		  p->status = TIMEOUT;
+		  kill (p->pid, SIGKILL);
+		}
 	    }
 	  else
 	    {

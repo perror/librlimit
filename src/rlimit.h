@@ -132,8 +132,10 @@ void rlimit_write_stdin (subprocess_t * p, char * msg);
 char *rlimit_read_stdout (subprocess_t * p);
 char *rlimit_read_stderr (subprocess_t * p);
 
-/* Look for 'pattern' in recent output of the subprocess */
-bool rlimit_expect (char * pattern, subprocess_t * p);
+/* Look for 'pattern' in recent output of the subprocess (see: regex.h) */
+bool rlimit_expect (subprocess_t * p, char * pattern);
+bool rlimit_expect_stdin (subprocess_t * p, char * pattern);
+bool rlimit_expect_stderr (subprocess_t * p, char * pattern);
 
 /* Check if the subprocess is terminated ('1' if terminated, '0' otherwise). */
 int rlimit_subprocess_poll (subprocess_t * p);
