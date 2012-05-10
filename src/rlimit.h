@@ -34,6 +34,7 @@
 #ifndef RLIMIT_H
 #define RLIMIT_H
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -127,12 +128,12 @@ int rlimit_subprocess_suspend (subprocess_t * p);
 int rlimit_subprocess_resume (subprocess_t * p);
 
 /* Handling input/output to a subprocess */
-void rlimit_write_stdin (char *msg, subprocess_t * p);
+void rlimit_write_stdin (subprocess_t * p, char * msg);
 char *rlimit_read_stdout (subprocess_t * p);
 char *rlimit_read_stderr (subprocess_t * p);
 
 /* Look for 'pattern' in recent output of the subprocess */
-boolean rlimit_expect (char * pattern, subprocess_t * p);
+bool rlimit_expect (char * pattern, subprocess_t * p);
 
 /* Check if the subprocess is terminated ('1' if terminated, '0' otherwise). */
 int rlimit_subprocess_poll (subprocess_t * p);
@@ -141,33 +142,33 @@ int rlimit_subprocess_poll (subprocess_t * p);
 int rlimit_subprocess_wait (subprocess_t * p);
 
 /* Send a signal to the subprocess */
-int rlimit_subprocess_signal (int signal, subprocess_t * p);
+int rlimit_subprocess_signal (subprocess_t * p, int signal);
 
 /* Setting/getting the subprocess limitation (default: 0 (unlimited)) */
 /* ****************************************************************** */
 
 /* Set/get the timeout (in seconds) */
-void rlimit_set_time_limit (int timeout, subprocess_t * p);
+void rlimit_set_time_limit (subprocess_t * p, int timeout);
 int rlimit_get_time_limit (subprocess_t * p);
 
 /* Set/get the maximum memory consumption (in bytes) */
-void rlimit_set_memory_limit (int memory, subprocess_t * p);
+void rlimit_set_memory_limit (subprocess_t * p, int memory);
 int rlimit_get_memory_limit (subprocess_t * p);
 
 /* Set/get the maximum file size (in bytes) */
-void rlimit_set_fsize_limit (int fsize, subprocess_t * p);
+void rlimit_set_fsize_limit (subprocess_t * p, int fsize);
 int rlimit_get_fsize_limit (subprocess_t * p);
 
 /* Set/get the maximum number of file descriptors used at once */
-void rlimit_set_fd_limit (int fd, subprocess_t * p);
+void rlimit_set_fd_limit (subprocess_t * p, int fd);
 int rlimit_get_fd_limit (subprocess_t * p);
 
 /* Set/get the maximum number of processes used at once */
-void rlimit_set_proc_limit (int proc, subprocess_t * p);
+void rlimit_set_proc_limit (subprocess_t * p, int proc);
 int rlimit_get_proc_limit (subprocess_t * p);
 
 /* Disable specific syscalls */
-void rlimit_disable_syscall (int syscall, subprocess_t * p);
+void rlimit_disable_syscall (subprocess_t * p, int syscall);
 int *rlimit_get_disabled_syscalls (subprocess_t * p);
 
 /* Getting subprocess profiling information */

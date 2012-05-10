@@ -470,8 +470,8 @@ fail:
 
 /* Monitor for the child process */
 static int
-child_monitor (int stdin_pipe[2], int stdout_pipe[2], int stderr_pipe[2],
-	       subprocess_t * p)
+child_monitor (subprocess_t * p,
+	       int stdin_pipe[2], int stdout_pipe[2], int stderr_pipe[2])
 {
   int ret = RETURN_SUCCESS;
 
@@ -567,7 +567,7 @@ child_monitor (int stdin_pipe[2], int stdout_pipe[2], int stderr_pipe[2],
 }
 
 static int
-syscall_filter (int *status, struct rusage *usage, subprocess_t * p)
+syscall_filter (subprocess_t * p, int *status, struct rusage *usage)
 {
   int syscall_id;
   bool syscall_enter = true;
@@ -655,9 +655,10 @@ monitor (void *arg)
 
   if (p->pid == 0)	/***** Child process *****/
     {
-      CHECK_ERROR ((child_monitor (stdin_pipe,
+      CHECK_ERROR ((child_monitor (p,
+				   stdin_pipe,
 				   stdout_pipe,
-				   stderr_pipe, p) == RETURN_FAILURE),
+				   stderr_pipe) == RETURN_FAILURE),
 		   "child monitor failed");
     }
   else			    /***** Parent process *****/
@@ -695,7 +696,7 @@ monitor (void *arg)
       /* Filtering syscalls with ptrace */
       if ((p->limits != NULL) && (p->limits->syscalls[0] > 0))
 	{
-	  if (syscall_filter (&status, &usage, p) == RETURN_FAILURE)
+	  if (syscall_filter (p, &status, &usage) == RETURN_FAILURE)
 	    goto fail;
 	}
 
@@ -822,7 +823,7 @@ rlimit_subprocess_resume (subprocess_t * p)
 }
 
 void
-rlimit_write_stdin (char *msg, subprocess_t * p)
+rlimit_write_stdin (subprocess_t * p, char * msg)
 {
   ssize_t size = strlen (msg);
 
@@ -874,7 +875,7 @@ rlimit_subprocess_wait (subprocess_t * p)
 }
 
 int
-rlimit_subprocess_signal (int signal, subprocess_t * p)
+rlimit_subprocess_signal (subprocess_t * p, int signal)
 {
   int ret;
 
@@ -888,7 +889,7 @@ rlimit_subprocess_signal (int signal, subprocess_t * p)
 /***** Setters and getters *****/
 
 void
-rlimit_set_time_limit (int timeout, subprocess_t * p)
+rlimit_set_time_limit (subprocess_t * p, int timeout)
 {
   if (p->limits == NULL)
     p->limits = limits_new ();
@@ -911,7 +912,7 @@ rlimit_get_time_limit (subprocess_t * p)
 }
 
 void
-rlimit_set_memory_limit (int memory, subprocess_t * p)
+rlimit_set_memory_limit (subprocess_t * p, int memory)
 {
   if (p->limits == NULL)
     p->limits = limits_new ();
@@ -934,7 +935,7 @@ rlimit_get_memory_limit (subprocess_t * p)
 }
 
 void
-rlimit_set_fsize_limit (int fsize, subprocess_t * p)
+rlimit_set_fsize_limit (subprocess_t * p, int fsize)
 {
   if (p->limits == NULL)
     p->limits = limits_new ();
@@ -957,7 +958,7 @@ rlimit_get_fsize_limit (subprocess_t * p)
 }
 
 void
-rlimit_set_fd_limit (int fd, subprocess_t * p)
+rlimit_set_fd_limit (subprocess_t * p, int fd)
 {
   if (p->limits == NULL)
     p->limits = limits_new ();
@@ -980,7 +981,7 @@ rlimit_get_fd_limit (subprocess_t * p)
 }
 
 void
-rlimit_set_proc_limit (int proc, subprocess_t * p)
+rlimit_set_proc_limit (subprocess_t * p, int proc)
 {
   if (p->limits == NULL)
     p->limits = limits_new ();
@@ -1003,7 +1004,7 @@ rlimit_get_proc_limit (subprocess_t * p)
 }
 
 void
-rlimit_disable_syscall (int syscall, subprocess_t * p)
+rlimit_disable_syscall (subprocess_t * p, int syscall)
 {
   if (p->limits == NULL)
     p->limits = limits_new ();

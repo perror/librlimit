@@ -11,8 +11,8 @@ main ()
 
   subprocess_t *p = rlimit_subprocess_create (myargc, myargv, NULL);
 
-  rlimit_disable_syscall (SYS_fork, p);
-  rlimit_disable_syscall (SYS_clone, p);
+  rlimit_disable_syscall (p, SYS_fork);
+  rlimit_disable_syscall (p, SYS_clone);
 
   rlimit_subprocess_run (p);
   rlimit_subprocess_wait (p);

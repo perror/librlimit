@@ -21,7 +21,7 @@ main ()
 
   /* Writing to the stdin */
   assert (p->stdin);
-  rlimit_write_stdin ("42\n", p);
+  rlimit_write_stdin (p, "42\n");
 
   rlimit_subprocess_wait (p);
 

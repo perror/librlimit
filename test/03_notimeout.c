@@ -11,7 +11,7 @@ main ()
 
   subprocess_t *p = rlimit_subprocess_create (myargc, myargv, NULL);
 
-  rlimit_set_time_limit (5, p);
+  rlimit_set_time_limit (p, 5);
 
   rlimit_subprocess_run (p);
   rlimit_subprocess_wait (p);
