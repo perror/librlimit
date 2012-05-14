@@ -557,10 +557,8 @@ child_monitor (subprocess_t * p,
   CHECK_ERROR ((close (stderr_pipe[1]) == -1), "close(stderr[1]) failed");
 
   /* Run the command line */
-  execve (p->argv[0], p->argv, p->envp);
-
-  /* Must never return after the execve */
-  CHECK_ERROR (true, "execve failed");
+  CHECK_ERROR((execve (p->argv[0], p->argv, p->envp) == -1),
+	      "execve failed");
 
   if (false)
   fail:
@@ -658,6 +656,9 @@ monitor (void *arg)
 
   if (p->pid == 0)	/***** Child process *****/
     {
+      /* TODO: What if the child_monitor fails miserably ? It should
+       * be signaled in the parent stderr and not in the child
+       * stderr. */
       CHECK_ERROR ((child_monitor (p,
 				   stdin_pipe,
 				   stdout_pipe,
