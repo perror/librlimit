@@ -14,7 +14,8 @@ bin_PROGRAMS = \
 	05_profile_sleep  	\
 	06_profile_stack_alloc 	\
 	07_profile_malloc	\
-	08_forbid_syscall_timeouted
+	08_forbid_syscall_timeouted \
+	09_ls_R
 
 01_io_SOURCES = 01_io.c
 02_timeout_SOURCES = 02_timeout.c
@@ -24,6 +25,7 @@ bin_PROGRAMS = \
 06_profile_stack_alloc_SOURCES = 06_profile_stack_alloc.c
 07_profile_malloc_SOURCES = 07_profile_malloc.c
 08_forbid_syscall_timeouted_SOURCES = 08_forbid_syscall_timeouted.c
+09_ls_R_SOURCES = 09_ls_R.c
 
 check: $(bin_PROGRAMS)
 	@./test-runner.sh

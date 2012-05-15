@@ -371,7 +371,7 @@ io_monitor (void *arg)
 
 	  if ((stdout_current + count + 1) > stdout_size)
 	    {
-	      stdout_size =
+	      stdout_size +=
 		((stdout_current + count + 1 - stdout_size) / 1024 + 1) * 1024;
 
 	      p->stdout_buffer = realloc (p->stdout_buffer, stdout_size);
@@ -392,7 +392,7 @@ io_monitor (void *arg)
 
 	  if ((stderr_current + count + 1) > stderr_size)
 	    {
-	      stderr_size =
+	      stderr_size +=
 		((stderr_current + count + 1 - stderr_size) / 1024 + 1) * 1024;
 
 	      p->stderr_buffer = realloc (p->stderr_buffer, stderr_size);
