@@ -101,11 +101,14 @@ typedef struct subprocess
   char *stdout_buffer;		/* Buffer storing stdout output */
   char *stderr_buffer;		/* Buffer storing stderr output */
 
-  pthread_t *monitor;		/* Reference to the monitor thread */
-  pthread_mutex_t write_mutex;	/* Mutex locking the writing on stdin */
-
   limits_t *limits;		/* Limits on the subprocess */
   profile_t *profile;		/* Profiling the subprocess */
+
+  /* private fields */
+  int expect_stdin_cursor;      /* Position of the expect cursor in stdin  */
+  int expect_stderr_cursor;     /* Position of the expect cursor in stderr */
+  pthread_t *monitor;		/* Reference to the monitor thread */
+  pthread_mutex_t write_mutex;	/* Mutex locking the writing on stdin */
 } subprocess_t;
 
 /* Handling subprocesses */

@@ -197,11 +197,6 @@ rlimit_subprocess_create (int argc, char **argv, char **envp)
   p->stdout_buffer = NULL;
   p->stderr_buffer = NULL;
 
-  p->monitor = malloc (sizeof (pthread_t));
-  CHECK_ERROR ((p->monitor == NULL), "p->monitor allocation failed");
-
-  pthread_mutex_init (&(p->write_mutex), NULL);
-
   /* Initializing the limits and profile to default */
   p->limits = NULL;
 
@@ -212,6 +207,15 @@ rlimit_subprocess_create (int argc, char **argv, char **envp)
   p->profile->user_time_usec = 0;
   p->profile->sys_time_usec = 0;
   p->profile->memory_kbytes = 0;
+
+  /* Initializing the private fields */
+  p->expect_stdin_cursor  = 0;
+  p->expect_stderr_cursor = 0;
+
+  p->monitor = malloc (sizeof (pthread_t));
+  CHECK_ERROR ((p->monitor == NULL), "p->monitor allocation failed");
+
+  pthread_mutex_init (&(p->write_mutex), NULL);
 
 fail:
   return p;
@@ -861,6 +865,12 @@ char *
 rlimit_read_stderr (subprocess_t * p)
 {
   return (p->stderr_buffer);
+}
+
+bool rlimit_expect_stdin (subprocess_t * p, char * pattern)
+{
+  // TODO !
+  return true;
 }
 
 int
