@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 SUBDIRS = utils .
 
-AM_CFLAGS = -I../src/
+AM_CFLAGS = -I$(top_srcdir)/src/
 AM_LDFLAGS = $(top_builddir)/src/librlimit.la -lpthread -lrt
 
 AUTOMAKE_OPTIONS=subdir-objects
@@ -28,7 +28,7 @@ bin_PROGRAMS = \
 09_ls_R_SOURCES = 09_ls_R.c
 
 check: $(bin_PROGRAMS)
-	@./test-runner.sh
+	$(top_srcdir)/test/test-runner.sh
 
 MAINTAINERCLEANFILES = \
 	Makefile.in

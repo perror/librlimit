@@ -13,9 +13,9 @@ lib_LTLIBRARIES = librlimit.la
 
 librlimit_la_SOURCES = rlimit.c rlimit.h
 
-librlimit_la_CFLAGS = -std=c99
-# librlimit_la_CPPFLAGS =
-# librilimit_la_LDFLAGS  =
+#librlimit_la_CFLAGS =
+#librlimit_la_CPPFLAGS =
+#librilimit_la_LDFLAGS =
 
 CLEANFILES +=
 
