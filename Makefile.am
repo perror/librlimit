@@ -23,4 +23,4 @@ MAINTAINERCLEANFILES = \
 	ylwrap
 
 maintainer-clean-local:
-	-rm -fr m4 autotools-files
+	@rm -fr m4 autotools-files

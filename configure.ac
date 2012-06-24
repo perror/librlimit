@@ -97,6 +97,5 @@ Here is the configuration of the package:
 Optional Features:
     Enable debug messages       : ${ENABLE_DEBUG}
     Enable optimization         : ${ENABLE_OPTIMIZE}
-    Maintainer mode             : ${enable_maintainer_mode}
     Enable -Werror              : ${ENABLE_WERROR}
 ])
