@@ -867,10 +867,24 @@ rlimit_read_stderr (subprocess_t * p)
   return (p->stderr_buffer);
 }
 
-bool rlimit_expect_stdin (subprocess_t * p, char * pattern)
+bool rlimit_expect_stdin (subprocess_t * p, char * pattern, int timeout)
 {
+  struct timespec start_time, current_time;
+
+  /* Getting start time */
+  CHECK_ERROR ((clock_gettime (CLOCK_MONOTONIC, &start_time) == -1),
+	       "getting start time failed");
+
+  do
+    {
+      /* Getting current time */
+      CHECK_ERROR ((clock_gettime (CLOCK_MONOTONIC, &current_time) == -1),
+	       "getting current time failed");
+    } while (timespec_diff (start_time, current_time).tv_sec < timeout);
+
+ fail:
   // TODO !
-  return true;
+  return false;
 }
 
 int
