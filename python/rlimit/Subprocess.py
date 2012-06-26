@@ -14,6 +14,8 @@ A needed module for Subprocess was not found.
 You should install it and try again.
 ''')
 
+rlimit = ctypes.cdll.LoadLibrary("../../src/.libs/librlimit.so.0.0.0")
+
 class Subprocess(object):
     '''Subprocess class is intended to provide a basic control over
     untrusted subprocesses.
