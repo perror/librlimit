@@ -55,7 +55,7 @@ fi
 
 AC_ARG_ENABLE(optimize,
               AS_HELP_STRING([--enable-optimize],
-                             [compile with optimization (default is no)]),
+                             [compile with optimization (default is yes)]),
               ENABLE_OPTIMIZE=$enableval,
               ENABLE_OPTIMIZE=yes)
 

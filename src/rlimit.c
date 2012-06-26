@@ -36,6 +36,7 @@
 
 #include <errno.h>
 #include <pthread.h>
+#include <regex.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -209,8 +210,8 @@ rlimit_subprocess_create (int argc, char **argv, char **envp)
   p->profile->memory_kbytes = 0;
 
   /* Initializing the private fields */
-  p->expect_stdin_cursor  = 0;
-  p->expect_stderr_cursor = 0;
+  p->expect_stdout  = 0;
+  p->expect_stderr = 0;
 
   p->monitor = malloc (sizeof (pthread_t));
   CHECK_ERROR ((p->monitor == NULL), "p->monitor allocation failed");
@@ -867,24 +868,207 @@ rlimit_read_stderr (subprocess_t * p)
   return (p->stderr_buffer);
 }
 
-bool rlimit_expect_stdin (subprocess_t * p, char * pattern, int timeout)
+bool rlimit_expect (subprocess_t * p, char * pattern, int timeout)
 {
+  regex_t regex;
+  bool result = false;
+  int new_expect_stdout = 0;
+  int new_expect_stderr = 0;
   struct timespec start_time, current_time;
+
+  struct timespec tick;
+  tick.tv_sec = 0;
+  tick.tv_nsec = 100;
 
   /* Getting start time */
   CHECK_ERROR ((clock_gettime (CLOCK_MONOTONIC, &start_time) == -1),
 	       "getting start time failed");
 
+  /* Getting the regular expression compiled */
+  int error = regcomp(&regex, pattern, REG_EXTENDED | REG_NOSUB);
+  char * str_stdout = &(p->stdout_buffer[p->expect_stdout]);
+  char * str_stderr = &(p->stderr_buffer[p->expect_stderr]);
+
+  /* Dealing with errors (if any) */
+  if (error != 0)
+    {
+      char msgbuf[128];
+      regerror(error, &regex, msgbuf, sizeof(msgbuf));
+
+      CHECK_ERROR(true, msgbuf);
+    }
+
+  /* Main loop: Wait until the pattern appears or the timeout is hit */
   do
     {
+      /* Wait a tick */
+      nanosleep (&tick, NULL);
+
+      if (!p->stdout_buffer)
+	continue;
+
+      /* Get future expect_stdout/stderr (avoiding increase after search) */
+      new_expect_stdout = strlen (p->stdout_buffer);
+      new_expect_stderr = strlen (p->stderr_buffer);
+
+      /* Searching for pattern */
+      if (regexec(&regex, str_stdout, (size_t) 0, NULL, 0) == 0)
+	{
+	  result = true;
+	  break;
+	}
+
+      if (!p->stderr_buffer)
+	continue;
+
+      /* Get future expect_stdout (avoiding increase after search) */
+      new_expect_stderr = strlen (p->stderr_buffer);
+
+      /* Searching for pattern */
+      if (regexec(&regex, str_stderr, (size_t) 0, NULL, 0) == 0)
+	{
+	  result = true;
+	  break;
+	}
+
       /* Getting current time */
       CHECK_ERROR ((clock_gettime (CLOCK_MONOTONIC, &current_time) == -1),
 	       "getting current time failed");
-    } while (timespec_diff (start_time, current_time).tv_sec < timeout);
+    }
+  while ((current_time.tv_sec - start_time.tv_sec) < timeout);
+
+  /* Setting expect_stdout/stderr to the new value */
+  p->expect_stdout = new_expect_stdout;
+  p->expect_stderr = new_expect_stderr;
 
  fail:
-  // TODO !
-  return false;
+  regfree(&regex);
+
+  return result;
+}
+
+bool rlimit_expect_stdout (subprocess_t * p, char * pattern, int timeout)
+{
+  regex_t regex;
+  bool result = false;
+  int new_expect_stdout = 0;
+  struct timespec start_time, current_time;
+
+  struct timespec tick;
+  tick.tv_sec = 0;
+  tick.tv_nsec = 100;
+
+  /* Getting start time */
+  CHECK_ERROR ((clock_gettime (CLOCK_MONOTONIC, &start_time) == -1),
+	       "getting start time failed");
+
+  /* Getting the regular expression compiled */
+  int error = regcomp(&regex, pattern, REG_EXTENDED | REG_NOSUB);
+  char * str = &(p->stdout_buffer[p->expect_stdout]);
+
+  /* Dealing with errors (if any) */
+  if (error != 0)
+    {
+      char msgbuf[128];
+      regerror(error, &regex, msgbuf, sizeof(msgbuf));
+
+      CHECK_ERROR(true, msgbuf);
+    }
+
+  /* Main loop: Wait until the pattern appears or the timeout is hit */
+  do
+    {
+      /* Wait a tick */
+      nanosleep (&tick, NULL);
+
+      if (!p->stdout_buffer)
+	continue;
+
+      /* Get future expect_stdout (avoiding increase after search) */
+      new_expect_stdout = strlen (p->stdout_buffer);
+
+      /* Searching for pattern */
+      if (regexec(&regex, str, (size_t) 0, NULL, 0) == 0)
+	{
+	  result = true;
+	  break;
+	}
+
+      /* Getting current time */
+      CHECK_ERROR ((clock_gettime (CLOCK_MONOTONIC, &current_time) == -1),
+	       "getting current time failed");
+    }
+  while ((current_time.tv_sec - start_time.tv_sec) < timeout);
+
+  /* Setting expect_stdout to the new value */
+  p->expect_stdout = new_expect_stdout;
+
+ fail:
+  regfree(&regex);
+
+  return result;
+}
+
+bool rlimit_expect_stderr (subprocess_t * p, char * pattern, int timeout)
+{
+  regex_t regex;
+  bool result = false;
+  int new_expect_stderr = 0;
+  struct timespec start_time, current_time;
+
+  struct timespec tick;
+  tick.tv_sec = 0;
+  tick.tv_nsec = 100;
+
+  /* Getting start time */
+  CHECK_ERROR ((clock_gettime (CLOCK_MONOTONIC, &start_time) == -1),
+	       "getting start time failed");
+
+  /* Getting the regular expression compiled */
+  int error = regcomp(&regex, pattern, REG_EXTENDED | REG_NOSUB);
+  char * str = &(p->stderr_buffer[p->expect_stderr]);
+
+  /* Dealing with errors (if any) */
+  if (error != 0)
+    {
+      char msgbuf[128];
+      regerror(error, &regex, msgbuf, sizeof(msgbuf));
+
+      CHECK_ERROR(true, msgbuf);
+    }
+
+  /* Main loop: Wait until the pattern appears or the timeout is hit */
+  do
+    {
+      /* Wait a tick */
+      nanosleep (&tick, NULL);
+
+      if (!p->stderr_buffer)
+	continue;
+
+      /* Get future expect_stderr (avoiding increase after search) */
+      new_expect_stderr = strlen (p->stderr_buffer);
+
+      /* Searching for pattern */
+      if (regexec(&regex, str, (size_t) 0, NULL, 0) == 0)
+	{
+	  result = true;
+	  break;
+	}
+
+      /* Getting current time */
+      CHECK_ERROR ((clock_gettime (CLOCK_MONOTONIC, &current_time) == -1),
+	       "getting current time failed");
+    }
+  while ((current_time.tv_sec - start_time.tv_sec) < timeout);
+
+  /* Setting expect_stderr to the new value */
+  p->expect_stderr = new_expect_stderr;
+
+ fail:
+  regfree(&regex);
+
+  return result;
 }
 
 int

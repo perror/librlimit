@@ -105,8 +105,8 @@ typedef struct subprocess
   profile_t *profile;		/* Profiling the subprocess */
 
   /* private fields */
-  int expect_stdin_cursor;      /* Position of the expect cursor in stdin  */
-  int expect_stderr_cursor;     /* Position of the expect cursor in stderr */
+  int expect_stdout;            /* Position of the expect cursor in stdout */
+  int expect_stderr;            /* Position of the expect cursor in stderr */
   pthread_t *monitor;		/* Reference to the monitor thread */
   pthread_mutex_t write_mutex;	/* Mutex locking the writing on stdin */
 } subprocess_t;
@@ -137,7 +137,7 @@ char *rlimit_read_stderr (subprocess_t * p);
 
 /* Look for 'pattern' in recent output of the subprocess (see: regex.h) */
 bool rlimit_expect (subprocess_t * p, char * pattern, int timeout);
-bool rlimit_expect_stdin (subprocess_t * p, char * pattern, int timeout);
+bool rlimit_expect_stdout (subprocess_t * p, char * pattern, int timeout);
 bool rlimit_expect_stderr (subprocess_t * p, char * pattern, int timeout);
 
 /* Check if the subprocess is terminated ('1' if terminated, '0' otherwise). */

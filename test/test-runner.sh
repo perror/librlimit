@@ -8,7 +8,9 @@ TESTS='01_io
        06_profile_stack_alloc
        07_profile_malloc
        08_forbid_syscall_timeouted
-       09_ls_R'
+       09_ls_R
+       10_expect
+       11_expect_failed'
 
 failed=0
 success=0
