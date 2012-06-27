@@ -1,22 +1,22 @@
 2012-05-04  Emmanuel Fleury  <emmanuel.fleury@labri.fr>
 
-	* Release version 0.8
+	* Release version 0.8.0
 	* Feature complete (except for the 'expect' API)
 	* Fixed race conditions (again) and other bugs
 
 2012-04-30  Emmanuel Fleury  <emmanuel.fleury@labri.fr>
 
-	* Release version 0.7
+	* Release version 0.7.0
 	* Fixed a lot of race conditions (still they are more to come)
 	* Added a polling mechanism on stdout/stderr to copy it in heap-memory
 
 2012-04-12  Emmanuel Fleury  <emmanuel.fleury@labri.fr>
 
-	* Release version 0.6
+	* Release version 0.6.0
 	* Feature: Added test framework
-	* Fixed various mistake of various importance
+	* Fixed various mistakes of various importance
 	  (from cosmetic up to critical bugs, report to the diffs for more)
 
 2012-04-06  Emmanuel Fleury  <emmanuel.fleury@labri.fr>
 
-	* Released first public version.
+	* Released version 0.5.0 (first public version).

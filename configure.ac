@@ -1,7 +1,7 @@
 dnl ********************************************************************
 dnl Process this file with autoconf to produce a configure script.
 dnl ********************************************************************
-AC_INIT([librlimit],[0.8])
+AC_INIT([librlimit],[0.8.0])
 AC_CONFIG_AUX_DIR([autotools-files])
 AC_CONFIG_MACRO_DIR([autotools-files/m4])
 AC_CONFIG_HEADERS([src/config.h])
@@ -24,11 +24,11 @@ dnl ********************************************************************
 dnl Option and variable settings
 dnl ********************************************************************
 
-dnl Initial settings of flags variables
+dnl Initial settings of flag variables
 CFLAGS="-Wall -Wextra -std=c99 -D_FORTIFY_SOURCE=2"
 CPPFLAGS="${CPPFLAGS}"
 LDFLAGS="${LDFLAGS}"
-LIBS="${LIBS}"
+LIBS="${LIBS} -lpthread -lrt"
 
 dnl Parsing and setting options on compile flags
 AC_ARG_ENABLE(werror,

@@ -1,10 +1,13 @@
 Here a few items that (may) need to be completed in the future versions:
 
+***** python/ *****
+* [feature] Provide a full Python API connected to librlimit.so
+  through the Python ctypes module.
+
+
 ***** src/ *****
 * [feature] Provide a more efficient data-structure to store and
   access the syscalls.
-
-* [feature] Provide an 'expect' interface
 
 
 ***** test/ *****
@@ -19,5 +22,5 @@ Here a few items that (may) need to be completed in the future versions:
 
 Future milestones
 ******************
-version 1.0: API stabilization and bug fixing
-version 0.9: documentation
+version 0.9.0: full featured version (expect) and Python API
+version 1.0.0: documentation, API stabilization and bug fixing

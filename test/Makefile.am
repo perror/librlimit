@@ -2,7 +2,7 @@
 SUBDIRS = utils .
 
 AM_CFLAGS = -I$(top_srcdir)/src/
-AM_LDFLAGS = $(top_builddir)/src/librlimit.la -lpthread -lrt
+AM_LDFLAGS = $(top_builddir)/src/librlimit.la
 
 AUTOMAKE_OPTIONS=subdir-objects
 

@@ -15,7 +15,7 @@ librlimit_la_SOURCES = rlimit.c rlimit.h
 
 #librlimit_la_CFLAGS =
 #librlimit_la_CPPFLAGS =
-#librilimit_la_LDFLAGS =
+librlimit_la_LDFLAGS =-release $(VERSION) -version-info 0:0:0
 
 CLEANFILES +=
 

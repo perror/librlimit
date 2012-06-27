@@ -19,7 +19,7 @@ main ()
   sleep(1);
   
   result =
-    rlimit_expect_stdout(p, "\.\.", 10) ? EXIT_SUCCESS : EXIT_FAILURE;
+    rlimit_expect_stdout(p, "\\.\\.", 10) ? EXIT_SUCCESS : EXIT_FAILURE;
 
   rlimit_subprocess_delete (p);
 

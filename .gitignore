@@ -9,8 +9,9 @@
 Makefile
 Makefile.in
 aclocal.m4
-autom4te.cache
-autotools-files
+autom4te.cache/
+autotools-files/
+build/
 compile
 config.guess
 config.h
@@ -35,6 +36,9 @@ test/05_profile_sleep
 test/06_profile_stack_alloc
 test/07_profile_malloc
 test/08_forbid_syscall_timeouted
+test/09_ls_R
+test/10_expect
+test/11_expect_failed
 test/utils/test_fork
 test/utils/test_io
 test/utils/test_malloc

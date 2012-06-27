@@ -6,7 +6,7 @@ fully based on the C library librlimit.
 '''
 
 try:
-    import ctypes
+    from ctypes import *
 except ImportError as err:
     raise ImportError (str(err) + '''
 
@@ -14,7 +14,7 @@ A needed module for Subprocess was not found.
 You should install it and try again.
 ''')
 
-rlimit = ctypes.cdll.LoadLibrary("../../src/.libs/librlimit.so.0.0.0")
+rlimit = cdll.LoadLibrary("librlimit.so")
 
 class Subprocess(object):
     '''Subprocess class is intended to provide a basic control over
