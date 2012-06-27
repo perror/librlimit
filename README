@@ -34,9 +34,9 @@ Developer Build and Install
 To build the library go to source root and generate the ./configure
 script by executing:
 
-./autogen.sh <configure-options>
+./autogen.sh
 
-The 'configure-options' are the usual ones plus a few more that are
+The configure options are the usual ones plus a few more that are
 listed below:
 
  --enable-werror         compile with -Werror flag (default is no)
