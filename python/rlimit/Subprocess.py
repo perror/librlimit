@@ -14,7 +14,20 @@ A needed module for Subprocess was not found.
 You should install it and try again.
 ''')
 
-rlimit = cdll.LoadLibrary("librlimit.so")
+try:
+    rlimit = cdll.LoadLibrary("librlimit.so")
+except OSError as err:
+    raise OSError (str(err) + '''
+
+librlimit.so cannot be found on your system.
+You should install it and/or set up properly your system.
+''')
+
+class SUBPROCESS(Structure):
+    _fields_ = [("status", c_int),
+                ("retval", c_int),
+                ("stdout_buffer", c_char_p),
+                ("stderr_buffer", c_char_p)]
 
 class Subprocess(object):
     '''Subprocess class is intended to provide a basic control over
@@ -37,11 +50,28 @@ class Subprocess(object):
         self.cmd = cmd
         self.env = env
 
+        # Translating cmd/env into C arguments through ctypes
+        argv_type = c_char_p * len(cmd)
+        argv = argv_type(*cmd)
+        argc = c_int(len(cmd))
+
+        if (env == None):
+            envp = None
+        else:
+            envp = argv_type(*env)
+
+        # Getting the subprocess pointer
+        subprocess = POINTER(SUBPROCESS)
+        subprocess_pointer = \
+            rlimit.rlimit_subprocess_create (argc, argv, envp)
+
+        self.subprocess = subprocess_pointer.contents
+
         # Subprocess information
-        self.status = None
-        self.stdout = None
-        self.stderr = None
-        self.returncode = None
+        self.status = self.subprocess.status
+        self.returncode = c_int(self.subprocess.retval)
+        self.stdout = c_char_p(self.subprocess.stdout_buffer)
+        self.stderr = c_char_p(self.subprocess.stderr_buffer)
 
         # Subprocess profile information
         self.real_time = None
@@ -109,3 +139,6 @@ class Subprocess(object):
             print('Cannot log-in !')
         '''
         pass
+
+if __name__ == "__main__":
+        subproc =  Subprocess(["/bin/ls", "-a"], None)
