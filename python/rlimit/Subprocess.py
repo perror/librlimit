@@ -61,14 +61,18 @@ class Subprocess(object):
             envp = argv_type(*env)
 
         # Getting the subprocess pointer
-        subprocess = POINTER(SUBPROCESS)
+        subprocess_init = rlimit.rlimit_subprocess_create
+        subprocess_init.restype = POINTER(SUBPROCESS)
+
+        subprocess_pointer = POINTER(SUBPROCESS)
         subprocess_pointer = \
             rlimit.rlimit_subprocess_create (argc, argv, envp)
+
+        print(subprocess_pointer)
 
         self.subprocess = subprocess_pointer.contents
 
         # Subprocess information
-        self.status = self.subprocess.status
         self.returncode = c_int(self.subprocess.retval)
         self.stdout = c_char_p(self.subprocess.stdout_buffer)
         self.stderr = c_char_p(self.subprocess.stderr_buffer)
@@ -87,7 +91,13 @@ class Subprocess(object):
         problem occurs at start time. The user might set a limit over
         the maximum time and memory for the subprocess to run.
         '''
-        pass
+        if not (timeout == None):
+            rlimit.rlimit_set_time_limit(self.subprocess, timeout)
+
+        if not (memory == None):
+            rlimit.rlimit_set_memory_limit(self.subprocess, memory)
+
+        rlimit.rlimit_subprocess_run(self.subprocess)
 
     def kill(self):
         '''Kill the process.'''
@@ -140,5 +150,21 @@ class Subprocess(object):
         '''
         pass
 
+    def get_status(self):
+        pass
+
+    def get_stdout(self):
+        pass
+
+    def get_stderr(self):
+        pass
+
+    def get_returnvalue(self):
+        pass
+
+    def get_profile(self):
+        pass
+
 if __name__ == "__main__":
-        subproc =  Subprocess(["/bin/ls", "-a"], None)
+    subproc =  Subprocess(["/bin/ls", "-a"], None)
+    subproc.run()
