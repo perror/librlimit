@@ -24,10 +24,24 @@ You should install it and/or set up properly your system.
 ''')
 
 class SUBPROCESS(Structure):
-    _fields_ = [("status", c_int),
+    _fields_ = [("argc", c_int),
+                ("argv", POINTER(c_char_p)),
+                ("envp", POINTER(c_char_p)),
+                ("pid", c_int),
+                ("status", c_int),
                 ("retval", c_int),
+                ("stdin", c_void_p),
+                ("stdout", c_void_p),
+                ("stderr", c_void_p),
+                ("stdin_buffer", c_char_p),
                 ("stdout_buffer", c_char_p),
-                ("stderr_buffer", c_char_p)]
+                ("stderr_buffer", c_char_p),
+                ("limits", c_void_p),
+                ("profile", c_void_p),
+                ("expect_stdout", c_int),
+                ("expect_stderr", c_int),
+                ("monitor", c_void_p),
+                ("write_mutex", c_int)]
 
 class Subprocess(object):
     '''Subprocess class is intended to provide a basic control over
@@ -61,27 +75,11 @@ class Subprocess(object):
             envp = argv_type(*env)
 
         # Getting the subprocess pointer
-        subprocess_init = rlimit.rlimit_subprocess_create
-        subprocess_init.restype = POINTER(SUBPROCESS)
+        rlimit.rlimit_subprocess_create.restype = POINTER(SUBPROCESS)
 
-        subprocess_pointer = POINTER(SUBPROCESS)
-        subprocess_pointer = \
+        self.subprocess = \
             rlimit.rlimit_subprocess_create (argc, argv, envp)
 
-        print(subprocess_pointer)
-
-        self.subprocess = subprocess_pointer.contents
-
-        # Subprocess information
-        self.returncode = c_int(self.subprocess.retval)
-        self.stdout = c_char_p(self.subprocess.stdout_buffer)
-        self.stderr = c_char_p(self.subprocess.stderr_buffer)
-
-        # Subprocess profile information
-        self.real_time = None
-        self.user_time = None
-        self.sys_time = None
-        self.memory = None
 
     def run(self, timeout=None, memory=None):
         '''Non-blocking execution.
@@ -99,33 +97,42 @@ class Subprocess(object):
 
         rlimit.rlimit_subprocess_run(self.subprocess)
 
+
     def kill(self):
         '''Kill the process.'''
-        pass
+        if (rlimit.rlimit_subprocess_kill(self.subprocess) == -1):
+            raise Exception("subprocess kill failed")
+
 
     def suspend(self):
         '''Suspend the process.'''
-        pass
+        if (rlimit.rlimit_subprocess_suspend(self.subprocess) == -1):
+            raise Exception("subprocess suspend failed")
+
 
     def resume(self):
         '''Resume the process.'''
-        pass
-    
+        if (rlimit.rlimit_subprocess_resume(self.subprocess) == -1):
+            raise Exception("subprocess resume failed")
+
+
     def wait(self):
         '''Wait for the end of the execution.
 
         This command wait for the subprocess to end and returns with
         the subprocess return code.
         '''
-        pass
-    
+        return rlimit.rlimit_subprocess_wait(self.subprocess)
+
+
     def write(self, msg):
         '''Write to the stdin of the subprocess.
 
         Write 'msg' to the stdin of the subprocess. Note that you need
         to be sure that the subprocess wait for input.
         '''
-        pass
+        rlimit_write_stdin(self.subprocess, c_char_p(msg))
+
 
     def expect(self, pattern, stdout=True, stderr=False, timeout=None):
         '''Search the given pattern at the end of the given output
@@ -148,23 +155,75 @@ class Subprocess(object):
         else
             print('Cannot log-in !')
         '''
-        pass
+        if (timeout == None):
+            timeout = 120
 
-    def get_status(self):
-        pass
+        if (stdout and stderr):
+            return rlimit_expect(self.subprocess, pattern, timeout)
+        elif (stdout and not stderr):
+            return rlimit_expect_stdout(self.subprocess, pattern, timeout)
+        elif (not stdout and stderr):
+            return rlimit_expect_stderr(self.subprocess, pattern, timeout)
 
-    def get_stdout(self):
-        pass
+    def status(self):
+        if (self.subprocess.contents.status == 0):
+            return "Ready"
+        elif (self.subprocess.contents.status == 1):
+            return "Running"
+        elif (self.subprocess.contents.status == 2):
+            return "Sleeping"
+        elif (self.subprocess.contents.status == 3):
+            return "Stopped"
+        elif (self.subprocess.contents.status == 4):
+            return "Zombie"
+        elif (self.subprocess.contents.status == 5):
+            return "Terminated"
+        elif (self.subprocess.contents.status == 6):
+            return "Killed"
+        elif (self.subprocess.contents.status == 7):
+            return "Timeout"
+        elif (self.subprocess.contents.status == 8):
+            return "Memoryout"
+        elif (self.subprocess.contents.status == 9):
+            return "FsizeExceed"
+        elif (self.subprocess.contents.status == 10):
+            return "FDExceed"
+        elif (self.subprocess.contents.status == 11):
+            return "ProcExceed"
+        elif (self.subprocess.contents.status == 12):
+            return "DeniedSyscall"
 
-    def get_stderr(self):
-        pass
+    def stdout(self):
+        return self.subprocess.contents.stdout_buffer
 
-    def get_returnvalue(self):
-        pass
 
-    def get_profile(self):
-        pass
+    def stderr(self):
+        return self.subprocess.contents.stderr_buffer
 
+
+    def returnvalue(self):
+        return self.subprocess.contents.retval
+
+
+    def profile(self):
+        return self.subprocess.contents.status
+
+# Testing the package
 if __name__ == "__main__":
     subproc =  Subprocess(["/bin/ls", "-a"], None)
+
+    print("Start")
+    print("Status is '%s'" % subproc.status())
+    print("Stdout = '%s'" % subproc.stdout())
+    print("Stderr = '%s'" % subproc.stderr())
+    print("Returnvalue = %i" % subproc.returnvalue())
+
     subproc.run()
+    subproc.wait()
+
+    print("")
+    print("After wait:")
+    print("Status is '%s'" % subproc.status())
+    print("Stdout = '%s'" % subproc.stdout())
+    print("Stderr = '%s'" % subproc.stderr())
+    print("Returnvalue = %i" % subproc.returnvalue())
