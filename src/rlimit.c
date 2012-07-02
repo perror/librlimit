@@ -376,8 +376,7 @@ io_monitor (void *arg)
 
 	  if ((stdout_current + count + 1) > stdout_size)
 	    {
-	      stdout_size +=
-		((stdout_current + count + 1 - stdout_size) / 1024 + 1) * 1024;
+	      stdout_size = (stdout_current + count + 1) * 2;
 
 	      p->stdout_buffer = realloc (p->stdout_buffer, stdout_size);
 	      CHECK_ERROR ((p->stdout_buffer == NULL), "stdout read failed");
