@@ -16,7 +16,6 @@ You should install it and try again.
 
 try:
     rlimit = cdll.LoadLibrary("librlimit.so")
-    libc = cdll.LoadLibrary("libc.so.6")
 except OSError as err:
     raise OSError (str(err) + '''
 
@@ -227,9 +226,5 @@ if __name__ == "__main__":
     print("Status is '%s'" % subproc.status())
 
     print("Stdout = '%s'" % subproc.stdout())
-    print("Stdout size = %i" % libc.strlen(subproc.stdout()))
-
     print("Stderr = '%s'" % subproc.stderr())
-    print("Stderr size = %i" % libc.strlen(subproc.stderr()))
-
     print("Returnvalue = %i" % subproc.returnvalue())
