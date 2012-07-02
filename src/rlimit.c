@@ -99,10 +99,6 @@ rlimit_warning (char *msg)
   perror (s);
 }
 
-#ifdef DEBUG
-#include "rlimit-debug.i"
-#endif
-
 subprocess_t *
 rlimit_subprocess_create (int argc, char **argv, char **envp)
 {
