@@ -10,6 +10,7 @@ Here a few items that (may) need to be completed in the future versions:
 * [bugfix] Passing an environment doesn't seem to work properly. This
   need to be looked at.
 
+
 ***** doc/ *****
 * [feature] Write a documentation of the main procedures of the API
   (manpages with troff).
