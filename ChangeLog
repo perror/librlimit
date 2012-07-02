@@ -1,3 +1,9 @@
+2012-07-02  Emmanuel Fleury  <emmanuel.fleury@labri.fr>
+
+	* Relesea version 0.9.0
+	* Feature complete (expect API and Python extension)
+	* Fixed some memory problems and race conditions
+
 2012-05-04  Emmanuel Fleury  <emmanuel.fleury@labri.fr>
 
 	* Release version 0.8.0
