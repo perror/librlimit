@@ -349,6 +349,9 @@ io_monitor (void *arg)
   size_t stderr_size = 0;
   size_t stderr_current = 0;
 
+  CHECK_ERROR ((pthread_detach (pthread_self ()) != 0),
+	       "pthread_detach failed");
+
   while (true)
     {
       FD_ZERO (&rfds);
@@ -374,6 +377,7 @@ io_monitor (void *arg)
 					     sizeof (buffer_stdout))) == -1),
 		       "read(stdout) failed");
 
+	  /* Expand memory if not enough space left */
 	  if ((stdout_current + count + 1) > stdout_size)
 	    {
 	      stdout_size = (stdout_current + count + 1) * 2;
@@ -382,7 +386,9 @@ io_monitor (void *arg)
 	      CHECK_ERROR ((p->stdout_buffer == NULL), "stdout read failed");
 	    }
 
-	  strncat (&(p->stdout_buffer[stdout_current]), buffer_stdout, count);
+	  CHECK_ERROR((memcpy(&(p->stdout_buffer[stdout_current]),
+			      buffer_stdout, count) == NULL),
+		      "memcpy of stdout failed");
 	  stdout_current += count;
 	  p->stdout_buffer[stdout_current] = '\0';
 	}
@@ -403,7 +409,9 @@ io_monitor (void *arg)
 	      CHECK_ERROR ((p->stderr_buffer == NULL), "stderr read failed");
 	    }
 
-	  strncat (&(p->stderr_buffer[stderr_current]), buffer_stderr, count);
+	  CHECK_ERROR((memcpy(&(p->stderr_buffer[stderr_current]),
+			      buffer_stderr, count) == NULL),
+		      "memcpy of stdout failed");
 	  stderr_current += count;
 	  p->stderr_buffer[stderr_current] = '\0';
 	}
@@ -841,10 +849,11 @@ rlimit_write_stdin (subprocess_t * p, char * msg)
 
   pthread_mutex_lock (&(p->write_mutex));
 
-  char * tmp = malloc (size * sizeof (char));
+  char * tmp = malloc ((size + 1) * sizeof (char));
   CHECK_ERROR ((tmp == NULL), "write failed");
 
-  strncpy (tmp, msg, size);
+  CHECK_ERROR((memcpy (tmp, msg, size) == NULL), "write failed");
+  tmp[size] = '\0';
 
   p->stdin_buffer = tmp;
 
