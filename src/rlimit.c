@@ -384,7 +384,7 @@ io_monitor (void *arg)
 
 	  strncat (&(p->stdout_buffer[stdout_current]), buffer_stdout, count);
 	  stdout_current += count;
-	  p->stdout_buffer[stdout_current + 1] = '\0';
+	  p->stdout_buffer[stdout_current] = '\0';
 	}
 
       if (FD_ISSET (stderr_fd, &rfds))
@@ -405,7 +405,7 @@ io_monitor (void *arg)
 
 	  strncat (&(p->stderr_buffer[stderr_current]), buffer_stderr, count);
 	  stderr_current += count;
-	  p->stderr_buffer[stderr_current + 1] = '\0';
+	  p->stderr_buffer[stderr_current] = '\0';
 	}
 
       if ((FD_ISSET (stdin_fd, &wfds)) && (p->stdin_buffer != NULL))
