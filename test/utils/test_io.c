@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 int
 main ()
@@ -20,6 +21,8 @@ main ()
 
   fprintf (stdout, "%s\n", str);
   fflush (stdout);
+
+  sleep(1);
 
   return EXIT_SUCCESS;
 }

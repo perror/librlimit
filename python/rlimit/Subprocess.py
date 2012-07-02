@@ -36,8 +36,11 @@ class SUBPROCESS(Structure):
                 ("stdin_buffer", c_char_p),
                 ("stdout_buffer", c_char_p),
                 ("stderr_buffer", c_char_p),
+                ("real_time_usec", c_int),
+                ("user_time_usec", c_int),
+                ("sys_time_usec", c_int),
+                ("memory_kbytes", c_int),
                 ("limits", c_void_p),
-                ("profile", c_void_p),
                 ("expect_stdout", c_int),
                 ("expect_stderr", c_int),
                 ("monitor", c_void_p),
@@ -72,7 +75,8 @@ class Subprocess(object):
         if (env == None):
             envp = None
         else:
-            envp = argv_type(*env)
+            envp_type = c_char_p * len(env)
+            envp = envp_type(*env)
 
         # Getting the subprocess pointer
         rlimit.rlimit_subprocess_create.restype = POINTER(SUBPROCESS)
@@ -205,12 +209,18 @@ class Subprocess(object):
         return self.subprocess.contents.retval
 
 
-    def profile(self):
-        return self.subprocess.contents.status
+    def time_profile(self):
+        return \
+            (self.subprocess.contents.real_time_usec,
+             self.subprocess.contents.user_time_usec,
+             self.subprocess.contents.sys_time_usec)
+
+    def memory_profile(self):
+        return self.subprocess.contents.memory_kbytes
 
 # Testing the package
 if __name__ == "__main__":
-    subproc =  Subprocess(["/bin/ls", "-al"], None)
+    subproc =  Subprocess(["/bin/ls"])
 
     print("Start")
     print("Status is '%s'" % subproc.status())
@@ -228,3 +238,5 @@ if __name__ == "__main__":
     print("Stdout = '%s'" % subproc.stdout())
     print("Stderr = '%s'" % subproc.stderr())
     print("Returnvalue = %i" % subproc.returnvalue())
+    print(subproc.time_profile())
+    print(subproc.memory_profile())

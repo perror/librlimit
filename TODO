@@ -1,10 +1,5 @@
 Here a few items that (may) need to be completed in the future versions:
 
-***** python/ *****
-* [feature] Provide a full Python API connected to librlimit.so
-  through the Python ctypes module.
-
-
 ***** src/ *****
 * [feature] Provide a more efficient data-structure to store and
   access the syscalls.
@@ -12,6 +7,8 @@ Here a few items that (may) need to be completed in the future versions:
 * [feature] Get rid of chars when getting stdout/stderr and consider
   it as bytes (more generic way).
 
+* [bugfix] Passing an environment doesn't seem to work properly. This
+  need to be looked at.
 
 ***** doc/ *****
 * [feature] Write a documentation of the main procedures of the API

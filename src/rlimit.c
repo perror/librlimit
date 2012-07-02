@@ -137,7 +137,7 @@ rlimit_subprocess_create (int argc, char **argv, char **envp)
 	  CHECK_ERROR (true, "subprocess allocation failed");
 	}
 
-      strcpy (p->argv[i], argv[i]);
+      memcpy (p->argv[i], argv[i], strlen(argv[i]) + 1);
     }
   p->argv[argc] = NULL;
 
@@ -180,7 +180,7 @@ rlimit_subprocess_create (int argc, char **argv, char **envp)
 	      CHECK_ERROR (true, "subprocess allocation failed");
 	    }
 
-	  strcpy (p->envp[i], envp[i]);
+	  memcpy (p->envp[i], envp[i], strlen(envp[i]) + 1);
 	}
       p->envp[envp_size] = NULL;
     }
@@ -199,15 +199,13 @@ rlimit_subprocess_create (int argc, char **argv, char **envp)
   p->stderr_buffer = NULL;
 
   /* Initializing the limits and profile to default */
+
+  p->real_time_usec = 0;
+  p->user_time_usec = 0;
+  p->sys_time_usec = 0;
+  p->memory_kbytes = 0;
+
   p->limits = NULL;
-
-  CHECK_ERROR (((p->profile = malloc (sizeof (profile_t))) == NULL),
-	       "initialization of profiling failed");
-
-  p->profile->real_time_usec = 0;
-  p->profile->user_time_usec = 0;
-  p->profile->sys_time_usec = 0;
-  p->profile->memory_kbytes = 0;
 
   /* Initializing the private fields */
   p->expect_stdout  = 0;
@@ -304,9 +302,6 @@ rlimit_subprocess_delete (subprocess_t * p)
   if (p->limits)
     limits_delete (p->limits);
 
-  /* Freeing the profile */
-  free (p->profile);
-
   /* Freeing the subprocess */
   free (p);
 }
@@ -349,9 +344,6 @@ io_monitor (void *arg)
   size_t stderr_size = 0;
   size_t stderr_current = 0;
 
-  CHECK_ERROR ((pthread_detach (pthread_self ()) != 0),
-	       "pthread_detach failed");
-
   while (true)
     {
       FD_ZERO (&rfds);
@@ -386,9 +378,7 @@ io_monitor (void *arg)
 	      CHECK_ERROR ((p->stdout_buffer == NULL), "stdout read failed");
 	    }
 
-	  CHECK_ERROR((memcpy(&(p->stdout_buffer[stdout_current]),
-			      buffer_stdout, count) == NULL),
-		      "memcpy of stdout failed");
+	  memcpy(&(p->stdout_buffer[stdout_current]), buffer_stdout, count);
 	  stdout_current += count;
 	  p->stdout_buffer[stdout_current] = '\0';
 	}
@@ -409,9 +399,7 @@ io_monitor (void *arg)
 	      CHECK_ERROR ((p->stderr_buffer == NULL), "stderr read failed");
 	    }
 
-	  CHECK_ERROR((memcpy(&(p->stderr_buffer[stderr_current]),
-			      buffer_stderr, count) == NULL),
-		      "memcpy of stdout failed");
+	  memcpy(&(p->stderr_buffer[stderr_current]), buffer_stderr, count);
 	  stderr_current += count;
 	  p->stderr_buffer[stderr_current] = '\0';
 	}
@@ -442,10 +430,6 @@ static void *
 watchdog (void *arg)
 {
   subprocess_t *p = arg;
-
-  CHECK_ERROR ((pthread_detach (pthread_self ()) != 0),
-	       "pthread_detach failed");
-
   sigset_t mask;
   sigemptyset (&mask);
   sigaddset (&mask, SIGCHLD);
@@ -479,7 +463,6 @@ watchdog (void *arg)
       break;
     }
 
-fail:
   return NULL;
 }
 
@@ -725,7 +708,7 @@ monitor (void *arg)
 		   "getting end time failed");
       tmp_time = timespec_diff (start_time, end_time);
 
-      p->profile->real_time_usec =
+      p->real_time_usec =
 	(time_t) (tmp_time.tv_sec * 1000000 + tmp_time.tv_nsec / 1000);
 
       /* Finding out what the status and retval are really */
@@ -775,15 +758,15 @@ monitor (void *arg)
 
       /* Cleaning and setting the profile information */
       /* User time in us */
-      p->profile->user_time_usec =
+      p->user_time_usec =
 	usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec;
 
       /* System time in us */
-      p->profile->sys_time_usec =
+      p->sys_time_usec =
 	usage.ru_stime.tv_sec * 1000 + usage.ru_stime.tv_usec;
 
       /* Memory usage */
-      p->profile->memory_kbytes = usage.ru_maxrss;
+      p->memory_kbytes = usage.ru_maxrss;
     }
 
   return NULL;
@@ -852,12 +835,13 @@ rlimit_write_stdin (subprocess_t * p, char * msg)
   char * tmp = malloc ((size + 1) * sizeof (char));
   CHECK_ERROR ((tmp == NULL), "write failed");
 
-  CHECK_ERROR((memcpy (tmp, msg, size) == NULL), "write failed");
+  memcpy (tmp, msg, size);
   tmp[size] = '\0';
 
   p->stdin_buffer = tmp;
 
-  while (p->stdin_buffer != NULL)
+  /* Wait until msg has been read or the process is finished */
+  while ((p->stdin_buffer != NULL) && (p->status < TERMINATED))
     nanosleep (&tick, NULL);
 
  fail:
@@ -1006,7 +990,8 @@ bool rlimit_expect_stdout (subprocess_t * p, char * pattern, int timeout)
       CHECK_ERROR ((clock_gettime (CLOCK_MONOTONIC, &current_time) == -1),
 	       "getting current time failed");
     }
-  while ((current_time.tv_sec - start_time.tv_sec) < timeout);
+  while (((current_time.tv_sec - start_time.tv_sec) < timeout) &&
+	 (p->status < TERMINATED));
 
   /* Setting expect_stdout to the new value */
   p->expect_stdout = new_expect_stdout;
@@ -1266,23 +1251,23 @@ rlimit_get_disabled_syscalls (subprocess_t * p)
 time_t
 rlimit_get_real_time (subprocess_t * p)
 {
-  return p->profile->real_time_usec;
+  return p->real_time_usec;
 }
 
 time_t
 rlimit_get_user_time (subprocess_t * p)
 {
-  return p->profile->user_time_usec;
+  return p->user_time_usec;
 }
 
 time_t
 rlimit_get_sys_time (subprocess_t * p)
 {
-  return p->profile->sys_time_usec;
+  return p->sys_time_usec;
 }
 
 size_t
 rlimit_get_memory (subprocess_t * p)
 {
-  return p->profile->memory_kbytes;
+  return p->memory_kbytes;
 }

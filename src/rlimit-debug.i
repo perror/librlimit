@@ -521,18 +521,15 @@ rlimit_subprocess_print (subprocess_t * p)
     }
 
   /* Profile of the program */
-  if (p->profile)
-    {
-      fprintf (stdout, "* Profiling information:\n");
-      fprintf (stdout, " + Real time: %.3fs\n",
-	       (double) p->profile->real_time_usec / 1000000);
-      fprintf (stdout, " + User time: %.3fs\n",
-	       (double) p->profile->user_time_usec / 1000000);
-      fprintf (stdout, " + System time: %.3fs\n",
-	       (double) p->profile->sys_time_usec / 1000000);
-      fprintf (stdout, " + Memory usage: %dkb\n",
-	       (int) p->profile->memory_kbytes);
-    }
+  fprintf (stdout, "* Profiling information:\n");
+  fprintf (stdout, " + Real time: %.3fs\n",
+	   (double) p->real_time_usec / 1000000);
+  fprintf (stdout, " + User time: %.3fs\n",
+	   (double) p->user_time_usec / 1000000);
+  fprintf (stdout, " + System time: %.3fs\n",
+	   (double) p->sys_time_usec / 1000000);
+  fprintf (stdout, " + Memory usage: %dkb\n",
+	   (int) p->memory_kbytes);
 
   /* Return value display */
   fprintf (stdout, "* Return value: %d\n", p->retval);

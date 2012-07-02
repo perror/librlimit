@@ -14,8 +14,8 @@ main ()
   rlimit_subprocess_run (p);
   rlimit_subprocess_wait (p);
 
-  assert (p->profile->real_time_usec >= 0);
-  assert (p->profile->memory_kbytes > 0);
+  assert (p->real_time_usec >= 0);
+  assert (p->memory_kbytes > 0);
   assert (p->retval == EXIT_SUCCESS);
   assert (p->status == TERMINATED);
 

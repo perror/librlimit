@@ -21,6 +21,7 @@ main ()
   result =
     rlimit_expect_stdout(p, "\\.\\.", 10) ? EXIT_SUCCESS : EXIT_FAILURE;
 
+  rlimit_subprocess_wait(p);
   rlimit_subprocess_delete (p);
 
   return result;

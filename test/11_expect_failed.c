@@ -21,6 +21,7 @@ main ()
   result =
     rlimit_expect_stdout(p, "^ aa", 1) ? EXIT_FAILURE : EXIT_SUCCESS;
 
+  rlimit_subprocess_wait(p);
   rlimit_subprocess_delete (p);
 
   return result;

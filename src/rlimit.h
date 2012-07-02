@@ -74,15 +74,6 @@ typedef struct limits
 				   the forbiden syscalls). */
 } limits_t;
 
-/* Profiling the subprocess (see: 'man 2 getrusage') */
-typedef struct profile
-{
-  time_t real_time_usec;	/* Real time (in micro-seconds) */
-  time_t user_time_usec;	/* User time (in micro-seconds) */
-  time_t sys_time_usec;		/* System time (in micro-seconds) */
-  size_t memory_kbytes;		/* Maximum global memory used by the childs */
-} profile_t;
-
 typedef struct subprocess
 {
   int argc;			/* Arguments' number */
@@ -101,8 +92,12 @@ typedef struct subprocess
   char *stdout_buffer;		/* Buffer storing stdout output */
   char *stderr_buffer;		/* Buffer storing stderr output */
 
+  time_t real_time_usec;	/* Real time (in micro-seconds) */
+  time_t user_time_usec;	/* User time (in micro-seconds) */
+  time_t sys_time_usec;		/* System time (in micro-seconds) */
+  size_t memory_kbytes;		/* Maximum global memory used by the childs */
+
   limits_t *limits;		/* Limits on the subprocess */
-  profile_t *profile;		/* Profiling the subprocess */
 
   /* private fields */
   int expect_stdout;            /* Position of the expect cursor in stdout */
