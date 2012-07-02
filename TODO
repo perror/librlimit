@@ -9,10 +9,8 @@ Here a few items that (may) need to be completed in the future versions:
 * [feature] Provide a more efficient data-structure to store and
   access the syscalls.
 
-
-***** test/ *****
-* [feature] Set up a test framework that can check each feature and
-  particular settings (trying to avoid regression).
+* [feature] Get rid of chars when getting stdout/stderr and consider
+  it as bytes (more generic way).
 
 
 ***** doc/ *****
