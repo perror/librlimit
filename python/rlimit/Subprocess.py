@@ -16,6 +16,7 @@ You should install it and try again.
 
 try:
     rlimit = cdll.LoadLibrary("librlimit.so")
+    libc = cdll.LoadLibrary("libc.so.6")
 except OSError as err:
     raise OSError (str(err) + '''
 
@@ -210,7 +211,7 @@ class Subprocess(object):
 
 # Testing the package
 if __name__ == "__main__":
-    subproc =  Subprocess(["/bin/ls", "-a"], None)
+    subproc =  Subprocess(["/bin/ls", "-al"], None)
 
     print("Start")
     print("Status is '%s'" % subproc.status())
@@ -224,6 +225,11 @@ if __name__ == "__main__":
     print("")
     print("After wait:")
     print("Status is '%s'" % subproc.status())
+
     print("Stdout = '%s'" % subproc.stdout())
+    print("Stdout size = %i" % libc.strlen(subproc.stdout()))
+
     print("Stderr = '%s'" % subproc.stderr())
+    print("Stderr size = %i" % libc.strlen(subproc.stderr()))
+
     print("Returnvalue = %i" % subproc.returnvalue())
