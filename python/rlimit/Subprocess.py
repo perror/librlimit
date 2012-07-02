@@ -217,26 +217,3 @@ class Subprocess(object):
 
     def memory_profile(self):
         return self.subprocess.contents.memory_kbytes
-
-# Testing the package
-if __name__ == "__main__":
-    subproc =  Subprocess(["/bin/ls"])
-
-    print("Start")
-    print("Status is '%s'" % subproc.status())
-    print("Stdout = '%s'" % subproc.stdout())
-    print("Stderr = '%s'" % subproc.stderr())
-    print("Returnvalue = %i" % subproc.returnvalue())
-
-    subproc.run()
-    subproc.wait()
-
-    print("")
-    print("After wait:")
-    print("Status is '%s'" % subproc.status())
-
-    print("Stdout = '%s'" % subproc.stdout())
-    print("Stderr = '%s'" % subproc.stderr())
-    print("Returnvalue = %i" % subproc.returnvalue())
-    print(subproc.time_profile())
-    print(subproc.memory_profile())
